@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Knowledge Navigator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #131829;
+            --bg-tertiary: #1a202e;
+            --border-color: #2d3748;
+            --text-primary: #e8edf7;
+            --text-secondary: #a0aec0;
+            --accent-blue: #5a9fd4;
+            --accent-teal: #38b6a8;
+            --accent-purple: #9f7aea;
+            --accent-red: #f56565;
+            --shadow: rgba(0, 0, 0, 0.5);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html.light-mode {
+            --bg-primary: #f8fafb;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --border-color: #e2e8f0;
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --accent-blue: #3182ce;
+            --accent-teal: #2c7a7b;
+            --accent-purple: #6b46c1;
+            --accent-red: #e53e3e;
+            --shadow: rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #141d3a 50%, var(--bg-primary) 100%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        /* Animated bookshelf background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(90deg, transparent 0%, rgba(90, 159, 212, 0.03) 50%, transparent 100%),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent 0px,
+                    transparent 40px,
+                    var(--border-color) 40px,
+                    var(--border-color) 41px
+                );
+            pointer-events: none;
+            z-index: 0;
+            animation: shelfGlow 8s ease-in-out infinite;
+        }
+
+        @keyframes shelfGlow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Decorative book spines */
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 200px;
+            height: 300px;
+            background: linear-gradient(135deg, 
+                var(--accent-blue) 0%, 
+                var(--accent-purple) 25%, 
+                var(--accent-red) 50%, 
+                var(--accent-teal) 75%, 
+                var(--accent-blue) 100%);
+            opacity: 0.05;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        main {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-content h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header-content p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .dark-mode-toggle {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dark-mode-toggle:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-blue);
+            transform: scale(1.05);
+        }
+
+        .dark-mode-toggle::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--accent-blue), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .dark-mode-toggle:hover::before {
+            opacity: 0.1;
+        }
+
+        /* Navigator Container */
+        .navigator {
+            display: grid;
+            gap: 24px;
+        }
+
+        .category {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: var(--transition);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .category:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 8px 24px var(--shadow);
+            transform: translateY(-2px);
+        }
+
+        .category-header {
+            padding: 20px 24px;
+            background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            user-select: none;
+            transition: var(--transition);
+        }
+
+        .category-header:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .category-header:active {
+            transform: scale(0.99);
+        }
+
+        .category-icon {
+            font-size: 1.5rem;
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .category-title {
+            flex: 1;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .category-description {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        .expand-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-blue);
+            font-size: 1.2rem;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: bold;
+        }
+
+        .category.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+
+        .category-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--bg-primary);
+        }
+
+        .category.expanded .category-content {
+            max-height: 1000px;
+        }
+
+        .file-list {
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .file-item {
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: var(--accent-blue);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+            transform-origin: center;
+        }
+
+        .file-item:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent-teal);
+            transform: translateX(4px);
+        }
+
+        .file-item:hover::before {
+            transform: scaleY(1);
+        }
+
+        .file-item:active {
+            transform: translateX(2px);
+        }
+
+        .file-icon {
+            font-size: 1.3rem;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .file-path {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-top: 2px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            opacity: 0.7;
+        }
+
+        .file-badge {
+            padding: 4px 10px;
+            background: rgba(90, 159, 212, 0.1);
+            border: 1px solid var(--accent-blue);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        /* Folder structure */
+        .subfolder {
+            margin-top: 16px;
+            margin-left: 12px;
+            padding-left: 12px;
+            border-left: 2px solid var(--border-color);
+        }
+
+        .subfolder-title {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            opacity: 0.8;
+        }
+
+        /* Empty state */
+        .empty-state {
+            padding: 32px 24px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content h1 {
+                font-size: 1.8rem;
+            }
+
+            header {
+                margin-bottom: 30px;
+            }
+
+            .file-list {
+                padding: 16px 20px;
+            }
+
+            .file-item {
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            body::before,
+            body::after {
+                display: none;
+            }
+        }
+
+        /* Focus styles for accessibility */
+        .file-item:focus-visible,
+        .category-header:focus-visible,
+        .dark-mode-toggle:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <div class="header-content">
+                <h1>📚 Medical Knowledge</h1>
+                <p>Navigate medical topics, guides, and resources</p>
+            </div>
+            <div class="header-controls">
+                <button class="dark-mode-toggle" id="themeToggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+                    🌙
+                </button>
+            </div>
+        </header>
+
+        <div class="navigator" id="navigator"></div>
+    </main>
+
+    <script>
+        // Medical content structure
+        const medicalContent = [
+            {
+                id: 'cardiology',
+                icon: '❤️',
+                title: 'Cardiology',
+                description: 'Heart and cardiovascular system',
+                expanded: false,
+                items: [
+                    { name: '1_Intro', path: './cardiology/1-cardiovascular_clinical_reasoning.html', type: 'Guide', folder: 'cardiology' },
+                    { name: '2_Heart_Failure', path: './cardiology/2-heart_failure_clinical_reasoning.html', type: 'Guide', folder: 'cardiology' },
+                ]
+            }
+        ];
+
+        // DOM elements
+        const navigator = document.getElementById('navigator');
+        const themeToggle = document.getElementById('themeToggle');
+
+        // Theme management
+        function initTheme() {
+            const isDark = localStorage.getItem('medical-nav-theme') !== 'light';
+            applyTheme(isDark);
+        }
+
+        function applyTheme(isDark) {
+            if (isDark) {
+                document.documentElement.classList.remove('light-mode');
+                themeToggle.textContent = '🌙';
+            } else {
+                document.documentElement.classList.add('light-mode');
+                themeToggle.textContent = '☀️';
+            }
+            localStorage.setItem('medical-nav-theme', isDark ? 'dark' : 'light');
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = !document.documentElement.classList.contains('light-mode');
+            applyTheme(!isDark);
+        });
+
+        // Render navigator
+        function renderNavigator() {
+            navigator.innerHTML = medicalContent.map((category, index) => `
+                <div class="category ${category.expanded ? 'expanded' : ''}" data-id="${category.id}">
+                    <div class="category-header" onclick="toggleCategory('${category.id}')">
+                        <div class="category-icon">${category.icon}</div>
+                        <div style="flex: 1;">
+                            <div class="category-title">${category.title}</div>
+                            <div class="category-description">${category.description}</div>
+                        </div>
+                        <div class="expand-icon">▼</div>
+                    </div>
+                    <div class="category-content">
+                        <div class="file-list">
+                            ${category.items.map(item => `
+                                <div class="file-item" onclick="openFile('${item.path}')">
+                                    <div class="file-icon">📄</div>
+                                    <div class="file-info">
+                                        <div class="file-name">${item.name}</div>
+                                        <div class="file-path">${item.folder}/${item.name.toLowerCase().replace(/\\s+/g, '-')}</div>
+                                    </div>
+                                    <div class="file-badge">${item.type}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Toggle category expansion
+        window.toggleCategory = (id) => {
+            const category = medicalContent.find(c => c.id === id);
+            if (category) {
+                category.expanded = !category.expanded;
+                renderNavigator();
+            }
+        };
+
+        // Open file
+        window.openFile = (path) => {
+            // In a real application, this would navigate to the file
+            // For demonstration, we show an alert with the path
+            alert(`Opening: ${path}\n\nIn a real setup, this would navigate to the actual HTML file.`);
+            // To actually navigate: window.location.href = path;
+        };
+
+        // Initialize
+        initTheme();
+        renderNavigator();
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                // Close all categories
+                medicalContent.forEach(cat => cat.expanded = false);
+                renderNavigator();
+            }
+        });
+    </script>
+</body>
+</html>
