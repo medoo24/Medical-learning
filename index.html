@@ -527,10 +527,7 @@
 
         // Open file
         window.openFile = (path) => {
-            // In a real application, this would navigate to the file
-            // For demonstration, we show an alert with the path
-            alert(`Opening: ${path}\n\nIn a real setup, this would navigate to the actual HTML file.`);
-            // To actually navigate: window.location.href = path;
+            window.location.href = path;
         };
 
         // Initialize
