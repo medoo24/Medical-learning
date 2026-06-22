@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7f1d1d">
+  <title>Heart Failure Clinical Reasoning</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
+  <style>
+    :root {
+      --base-font-size: 16px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      overflow-x: hidden;
+      font-size: var(--base-font-size);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #1e293b;
+      background: #fff7f7;
+    }
+    button, select, input, textarea { font: inherit; }
+    button, [role="button"], select { min-height: 44px; touch-action: manipulation; }
+    textarea { min-height: 120px; }
+    .min-h-dvh { min-height: 100dvh; }
+    .safe-header { padding-top: var(--safe-top); }
+    .safe-bottom { padding-bottom: max(1rem, var(--safe-bottom)); }
+    .tab-strip { scrollbar-width: none; scroll-snap-type: x proximity; }
+    .tab-strip::-webkit-scrollbar { display: none; }
+    .tab-button { scroll-snap-align: center; }
+    .focus-ring:focus-visible { outline: 3px solid #fb7185; outline-offset: 3px; }
+    .card-shadow { box-shadow: 0 14px 38px rgba(127,29,29,.09); }
+    .soft-grid {
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(190,24,93,.085) 1px, transparent 0),
+        linear-gradient(180deg, rgba(255,255,255,.82), rgba(255,247,247,.96));
+      background-size: 24px 24px, auto;
+    }
+    .gradient-text {
+      background: linear-gradient(90deg,#be123c,#b91c1c,#7c3aed);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .finding {
+      border-left: 4px solid #fb7185;
+      background: rgba(244,63,94,.065);
+      transition: transform .16s ease, background .16s ease, box-shadow .16s ease;
+    }
+    .finding:hover { transform: translateX(2px); background: rgba(244,63,94,.11); }
+    .finding.marked { box-shadow: 0 0 0 2px rgba(244,63,94,.65); }
+    .answer-btn[data-state="correct"] { border-color: #16a34a !important; background: rgba(34,197,94,.12) !important; }
+    .answer-btn[data-state="wrong"] { border-color: #dc2626 !important; background: rgba(239,68,68,.10) !important; }
+    .slide-up { animation: slideUp .22s ease-out; }
+    .toast { animation: toastIn .2s ease-out; }
+    .pulse-soft { animation: pulseSoft 2.2s infinite; }
+    .modal-backdrop { background: rgba(15,23,42,.72); backdrop-filter: blur(5px); }
+    .prose-med h2 { margin-top: 1.65rem; font-size: 1.35rem; line-height: 1.25; font-weight: 850; }
+    .prose-med h3 { margin-top: 1.1rem; font-size: 1.08rem; line-height: 1.35; font-weight: 800; }
+    .prose-med p, .prose-med li { line-height: 1.72; }
+    .prose-med ul { padding-left: 1.3rem; list-style: disc; }
+    .prose-med ol { padding-left: 1.3rem; list-style: decimal; }
+    .prose-med table { width: 100%; border-collapse: collapse; }
+    .prose-med th, .prose-med td { border: 1px solid #cbd5e1; padding: .65rem; text-align: left; vertical-align: top; }
+    .step-line::before {
+      content: "";
+      position: absolute;
+      left: 19px;
+      top: 39px;
+      bottom: -18px;
+      width: 2px;
+      background: linear-gradient(#fda4af,#fecdd3);
+    }
+    .step-line:last-child::before { display: none; }
+    .dark body { background: #020617; color: #e2e8f0; }
+    .dark .soft-grid {
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(251,113,133,.13) 1px, transparent 0),
+        linear-gradient(180deg, rgba(2,6,23,.93), rgba(15,23,42,.98));
+    }
+    .dark .finding { background: rgba(244,63,94,.11); }
+    .dark .prose-med th, .dark .prose-med td { border-color: #475569; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulseSoft { 0%,100% { opacity: .62; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.04); } }
+    @media (max-width: 430px) {
+      .mobile-hide { display: none !important; }
+      .compact-title { max-width: 155px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+    @media print {
+      header, nav, .no-print, #toastContainer { display: none !important; }
+      body { background: white !important; color: black !important; }
+      main { max-width: none !important; padding: 0 !important; }
+      details { display: block !important; }
+      details > * { display: block !important; }
+    }
+  </style>
+</head>
+<body class="transition-colors">
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[100] focus:rounded-lg focus:bg-rose-700 focus:px-4 focus:py-2 focus:text-white">Skip to main content</a>
+
+  <header class="safe-header sticky top-0 z-50 border-b border-rose-100/80 bg-white/95 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
+    <div class="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2 px-3 py-2.5 sm:px-5">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2.5">
+          <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-rose-600 to-red-800 text-white shadow-sm" aria-hidden="true">
+            <i data-lucide="heart-pulse" class="h-5 w-5"></i>
+          </div>
+          <div class="compact-title min-w-0">
+            <h1 class="truncate text-base font-black tracking-tight sm:text-lg">Heart Failure Reasoning</h1>
+            <p class="truncate text-xs text-slate-500 dark:text-slate-400">Recognition • Mechanism • Evidence • Management</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1">
+        <div class="mobile-hide mr-1 hidden items-center gap-2 rounded-full bg-rose-50 px-3 py-2 text-xs font-bold text-rose-900 dark:bg-slate-800 dark:text-slate-200 sm:flex" aria-label="Learning metrics">
+          <span title="Study streak">📊 <span id="streakDisplay">0</span></span>
+          <span class="text-rose-200 dark:text-slate-600">|</span>
+          <span title="Experience points">⭐ <span id="xpDisplay">0</span></span>
+        </div>
+        <button id="fontDecrease" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-rose-50 dark:hover:bg-slate-800" title="Decrease font size" aria-label="Decrease font size">A−</button>
+        <button id="fontIncrease" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-rose-50 dark:hover:bg-slate-800" title="Increase font size" aria-label="Increase font size">A+</button>
+        <button id="playButton" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-rose-50 dark:hover:bg-slate-800" title="Read current view aloud" aria-label="Read current view aloud"><i data-lucide="play" class="h-5 w-5"></i></button>
+        <button id="settingsButton" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-rose-50 dark:hover:bg-slate-800" title="Narration controls" aria-label="Open narration controls" aria-expanded="false"><i data-lucide="settings-2" class="h-5 w-5"></i></button>
+        <button id="darkModeToggle" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-rose-50 dark:hover:bg-slate-800" title="Toggle dark mode" aria-label="Toggle dark mode"><i data-lucide="moon" class="h-5 w-5"></i></button>
+        <button id="helpButton" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-rose-50 dark:hover:bg-slate-800" title="Help" aria-label="Open help"><i data-lucide="circle-help" class="h-5 w-5"></i></button>
+      </div>
+    </div>
+
+    <div id="settingsPanel" class="hidden border-t border-rose-100 bg-rose-50/80 dark:border-slate-700 dark:bg-slate-800">
+      <div class="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-4 px-4 py-3 text-sm">
+        <label class="flex items-center gap-2 font-semibold">Voice
+          <select id="voiceSelect" class="focus-ring min-h-11 rounded-lg border border-rose-200 bg-white px-3 dark:border-slate-600 dark:bg-slate-900">
+            <option value="auto">Automatic</option>
+          </select>
+        </label>
+        <label class="flex items-center gap-2 font-semibold">Speed
+          <input id="speechSpeed" type="range" min="0.6" max="1.8" step="0.1" value="1" class="w-32" aria-label="Speech speed">
+          <span id="speedValue" class="w-10 text-right">1.0×</span>
+        </label>
+        <label class="flex min-h-11 items-center gap-2 font-semibold">
+          <input id="evidenceToggle" type="checkbox" checked class="h-5 w-5 rounded"> Show detailed findings
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <nav class="sticky top-[65px] z-40 border-b border-rose-100 bg-white dark:border-slate-700 dark:bg-slate-900" aria-label="Learning sections">
+    <div id="tabStrip" class="tab-strip mx-auto flex w-full max-w-5xl overflow-x-auto px-2" role="tablist" aria-label="Application sections">
+      <button class="tab-button focus-ring shrink-0 border-b-2 border-rose-600 px-4 py-3 text-sm font-bold text-rose-700 dark:text-rose-300" data-tab="cases" role="tab" aria-selected="true">Cases</button>
+      <button class="tab-button focus-ring shrink-0 border-b-2 border-transparent px-4 py-3 text-sm font-bold text-slate-500" data-tab="read" role="tab" aria-selected="false">Read</button>
+      <button class="tab-button focus-ring shrink-0 border-b-2 border-transparent px-4 py-3 text-sm font-bold text-slate-500" data-tab="differentials" role="tab" aria-selected="false">Differentials</button>
+      <button class="tab-button focus-ring shrink-0 border-b-2 border-transparent px-4 py-3 text-sm font-bold text-slate-500" data-tab="evidence" role="tab" aria-selected="false">Evidence</button>
+      <button class="tab-button focus-ring shrink-0 border-b-2 border-transparent px-4 py-3 text-sm font-bold text-slate-500" data-tab="reviews" role="tab" aria-selected="false">Case Reviews</button>
+      <button class="tab-button focus-ring shrink-0 border-b-2 border-transparent px-4 py-3 text-sm font-bold text-slate-500" data-tab="quiz" role="tab" aria-selected="false">Quiz</button>
+    </div>
+  </nav>
+
+  <main id="main-content" class="soft-grid min-h-dvh mx-auto w-full max-w-5xl px-3 py-5 sm:px-5 sm:py-7">
+    <section id="cases-tab" class="tab-content" role="tabpanel" aria-label="Cases"></section>
+    <section id="read-tab" class="tab-content hidden" role="tabpanel" aria-label="Read"></section>
+    <section id="differentials-tab" class="tab-content hidden" role="tabpanel" aria-label="Differentials"></section>
+    <section id="evidence-tab" class="tab-content hidden" role="tabpanel" aria-label="Evidence"></section>
+    <section id="reviews-tab" class="tab-content hidden" role="tabpanel" aria-label="Case reviews"></section>
+    <section id="quiz-tab" class="tab-content hidden" role="tabpanel" aria-label="Quiz"></section>
+  </main>
+
+  <div id="toastContainer" class="pointer-events-none fixed bottom-4 right-4 z-[80] flex max-w-[calc(100vw-2rem)] flex-col gap-2" aria-live="polite"></div>
+
+  <div id="helpModal" class="modal-backdrop fixed inset-0 z-[90] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900" tabindex="-1">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-xs font-black uppercase tracking-[.2em] text-rose-600">Learning guide</p>
+          <h2 id="helpTitle" class="mt-1 text-2xl font-black">Commit before you reveal</h2>
+        </div>
+        <button id="closeHelp" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-rose-50 dark:hover:bg-slate-800" aria-label="Close help"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+      <div class="mt-5 space-y-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
+        <p>Each case moves from syndrome recognition to mechanism, comparison, and teach-back. Make an attempt before opening the explanation.</p>
+        <div class="rounded-xl bg-rose-50 p-4 dark:bg-rose-950/30">
+          <p class="font-black text-rose-950 dark:text-rose-100">A useful Heart Failure reasoning frame</p>
+          <p class="mt-1">Identify low output versus congestion, decide whether the congestion is pulmonary or systemic, then use BNP, chest X-ray, ECG, and echocardiography to refine the diagnosis.</p>
+        </div>
+        <div>
+          <p class="font-black">Keyboard</p>
+          <ul class="mt-1 list-disc pl-5">
+            <li><kbd class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">Tab</kbd> moves through controls.</li>
+            <li><kbd class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">Enter</kbd> activates the focused control.</li>
+            <li><kbd class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">Esc</kbd> closes this window.</li>
+          </ul>
+        </div>
+        <p class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">This educational application follows only the supplied Heart Failure notes. It is not a substitute for patient-specific clinical care.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'heartFailureReasoningStateV1';
+    const todayISO = () => new Date().toISOString().slice(0,10);
+    const addDays = (date, days) => { const d = new Date(date + 'T12:00:00'); d.setDate(d.getDate() + days); return d.toISOString().slice(0,10); };
+
+    const defaultState = {
+      activeTab: 'cases', fontSize: 16, darkMode: false, xp: 0, streak: 0,
+      lastVisit: todayISO(), currentCaseId: 'left-failure', currentStep: 0,
+      caseProgress: {}, differentialMastery: {}, srsSchedule: {}, quizAnswers: {},
+      misconceptionHistory: [], evidenceDetail: true
+    };
+    let appState = {...defaultState};
+    try { appState = {...defaultState, ...(JSON.parse(localStorage.getItem(STORAGE_KEY)) || {})}; } catch (e) {}
+
+    const cases = [
+      {
+        id: 'left-failure', icon: 'waves', title: 'The Breathless Patient', subtitle: 'Left-sided failure and pulmonary congestion', minutes: 9,
+        scenario: {
+          patient: 'A 66-year-old man with long-standing systemic hypertension',
+          complaint: 'Progressive exertional dyspnea, four-pillow orthopnea, and two episodes of waking at night gasping for air.',
+          vitals: ['BP 154/92 mmHg', 'HR 108/min', 'RR 26/min', 'O₂ 91% on room air'],
+          findings: ['Bilateral fine basal crepitations that do not clear with coughing', 'Third heart sound at the apex', 'Displaced thrusting apical impulse', 'Cardiomegaly and bilateral perihilar “bat-wing” opacities on chest X-ray', 'BNP 820 pg/mL']
+        },
+        question: 'Which diagnosis best unifies the presentation?',
+        options: [
+          {id:'right', text:'Isolated right-sided heart failure'},
+          {id:'left', text:'Acute decompensated left-sided heart failure'},
+          {id:'lowoutput', text:'Low-output state without congestion'},
+          {id:'valveonly', text:'Valvular disease without heart failure'}
+        ],
+        correct: 'left',
+        learnerVoices: [
+          'The orthopnea and PND sound like pulmonary congestion. The S₃, cardiomegaly, and BNP make left-sided failure fit.',
+          'I focused on the fast heart rate, but that does not explain the orthopnea and crackles. The congestion pattern is stronger.'
+        ],
+        feedbackCorrect: 'Exactly. Orthopnea, paroxysmal nocturnal dyspnea, persistent basal crepitations, cardiomegaly, an S₃ gallop, and a markedly elevated BNP form a pulmonary-congestion pattern from left-sided heart failure.',
+        feedbackWrong: 'Your choice captures part of the case, but not the dominant syndrome. Pulmonary symptoms plus basal crepitations, cardiomegaly, an S₃, and elevated BNP point to backward failure on the left side.',
+        hint: 'Separate forward low-output manifestations from backward pulmonary congestion.',
+        patternTitle: 'From left ventricular dysfunction to pulmonary congestion',
+        pattern: [
+          'Left ventricular performance falls or filling pressure rises.',
+          'Pressure is transmitted backward into the pulmonary veins.',
+          'Interstitial and then alveolar fluid lowers lung compliance and produces dyspnea, orthopnea, PND, and crepitations.',
+          'A dilated or stiff ventricle may produce an S₃; ventricular enlargement may displace the apical impulse and cause functional mitral regurgitation.'
+        ],
+        contrast: {
+          prompt: 'A second patient has elevated JVP, tender hepatomegaly, ascites, and dependent pitting edema, with no dominant pulmonary crepitations. Which side is primarily failing?',
+          options: ['Left-sided heart failure', 'Right-sided heart failure'], correct: 1,
+          explanation: 'Systemic venous congestion—elevated JVP, hepatomegaly, ascites, and dependent edema—is the backward pattern of right-sided heart failure.'
+        },
+        teachBack: 'In 2–3 sentences, defend left-sided heart failure by naming the pulmonary congestion pattern and the strongest objective findings.',
+        summary: 'Left-sided heart failure produces forward low-output features and backward pulmonary congestion. Orthopnea, PND, persistent basal crepitations, cardiomegaly, and an S₃ are high-yield anchors.'
+      },
+      {
+        id: 'right-failure', icon: 'droplets', title: 'The Congested Patient', subtitle: 'Right-sided failure and systemic venous congestion', minutes: 8,
+        scenario: {
+          patient: 'A 59-year-old woman with pulmonary hypertension',
+          complaint: 'Progressive ankle swelling, abdominal fullness, poor appetite, and right hypochondrial discomfort.',
+          vitals: ['BP 112/72 mmHg', 'HR 96/min', 'RR 20/min', 'O₂ 94%'],
+          findings: ['Elevated pulsatile jugular venous pressure', 'JVP rises more than 3 cm during sustained right-upper-quadrant pressure', 'Soft, smooth, tender hepatomegaly', 'Ascites and bilateral dependent pitting edema', 'Left parasternal heave and a pansystolic murmur that increases with inspiration']
+        },
+        question: 'Which diagnosis best explains this cluster?',
+        options: [
+          {id:'lhf', text:'Predominantly left-sided failure'},
+          {id:'rhf', text:'Predominantly right-sided heart failure'},
+          {id:'hfpef', text:'HFpEF defined only by ejection fraction'},
+          {id:'isolatedlow', text:'Isolated low cardiac output without venous congestion'}
+        ],
+        correct: 'rhf',
+        learnerVoices: [
+          'The JVP, hepatojugular reflux, tender liver, ascites, and edema all point backward into the systemic veins.',
+          'I almost chose left-sided failure because both sides can reduce output, but the local and systemic signs are right-sided.'
+        ],
+        feedbackCorrect: 'You caught the systemic-congestion pattern. Elevated JVP, a positive hepatojugular reflux, tender hepatomegaly, ascites, dependent edema, a parasternal heave, and inspiratory augmentation of tricuspid regurgitation all support right-sided failure.',
+        feedbackWrong: 'Low output may occur in either side, but the discriminating clues here are systemic venous congestion and right-ventricular local signs.',
+        hint: 'Ask where blood is backing up: pulmonary veins or systemic veins?',
+        patternTitle: 'Systemic venous congestion chain',
+        pattern: [
+          'Right ventricular failure raises right atrial and systemic venous pressure.',
+          'Neck veins become distended; abdominal pressure further raises JVP when the right ventricle cannot accept the extra venous return.',
+          'Hepatic congestion causes tender hepatomegaly and right hypochondrial pain; chronic congestion may lead to cardiac cirrhosis.',
+          'Fluid accumulates as ascites, pleural effusion, and dependent pitting edema.'
+        ],
+        contrast: {
+          prompt: 'Which finding shifts the pattern toward left-sided backward failure rather than right-sided backward failure?',
+          options: ['Dependent ankle edema', 'Tender hepatomegaly', 'Orthopnea with bilateral basal crepitations'], correct: 2,
+          explanation: 'Orthopnea and persistent bilateral basal crepitations are manifestations of pulmonary venous congestion from left-sided failure.'
+        },
+        teachBack: 'Build a short diagnostic argument linking elevated JVP, hepatojugular reflux, hepatomegaly, ascites, and edema to right-sided failure.',
+        summary: 'Right-sided failure causes systemic venous congestion. The key bedside pattern is raised JVP plus hepatic and dependent fluid accumulation, supported by right-ventricular local signs.'
+      },
+      {
+        id: 'ef-phenotype', icon: 'scan-heart', title: 'Normal EF, Real Heart Failure', subtitle: 'HFpEF versus HFrEF', minutes: 8,
+        scenario: {
+          patient: 'A 74-year-old woman with chronic hypertension and left ventricular hypertrophy',
+          complaint: 'Exertional dyspnea, orthopnea, and ankle edema despite an ejection fraction that is not reduced.',
+          vitals: ['BP 168/88 mmHg', 'HR 84/min', 'RR 22/min', 'O₂ 93%'],
+          findings: ['LVEF 56%', 'Concentric left ventricular hypertrophy', 'Impaired relaxation and elevated filling-pressure indices on echocardiography', 'Elevated natriuretic peptide level', 'Clinical symptoms and signs of congestion']
+        },
+        question: 'How should this heart failure phenotype be classified?',
+        options: [
+          {id:'hfr', text:'HFrEF because symptoms are severe'},
+          {id:'hfp', text:'HFpEF because LVEF is at least 50% with diastolic dysfunction'},
+          {id:'nohf', text:'No heart failure because EF is normal'},
+          {id:'rightonly', text:'Right-sided failure only'}
+        ],
+        correct: 'hfp',
+        learnerVoices: [
+          'I used to think a preserved EF excluded failure. But the stiffness, impaired filling, high filling pressure, and congestion support HFpEF.',
+          'The symptoms are not enough by themselves; the echo shows preserved EF with diastolic dysfunction.'
+        ],
+        feedbackCorrect: 'Exactly. HFpEF is heart failure with LVEF at least 50%, evidence of abnormal relaxation or stiffness with elevated filling pressures, and supporting findings such as elevated natriuretic peptides.',
+        feedbackWrong: 'A preserved ejection fraction does not exclude heart failure. Ask whether the ventricle fills normally or whether stiffness raises diastolic pressure.',
+        hint: 'EF describes the fraction ejected, not whether filling pressure is normal.',
+        patternTitle: 'Preserved ejection, impaired filling',
+        pattern: [
+          'The ventricle becomes stiff or relaxes abnormally.',
+          'Filling requires higher diastolic pressure even though the ejection fraction remains at least 50%.',
+          'Elevated filling pressure produces the same clinical syndrome of dyspnea and congestion.',
+          'Chronic hypertension, LVH, restrictive or infiltrative disease, and aging are source-listed causes.'
+        ],
+        contrast: {
+          prompt: 'A second patient has the same congestion symptoms but an LVEF of 34%. Which phenotype is present?',
+          options: ['HFpEF', 'HFrEF'], correct: 1,
+          explanation: 'The supplied notes classify HFrEF at an LVEF of 40% or less. An LVEF of 34% is therefore reduced.'
+        },
+        teachBack: 'Explain why an LVEF of 56% does not rule out heart failure, and name the echo and biomarker evidence that supports HFpEF.',
+        summary: 'HFpEF is a filling-pressure problem: preserved LVEF with abnormal relaxation or stiffness, elevated diastolic pressure, clinical heart failure, and supportive echo or natriuretic-peptide evidence.'
+      },
+      {
+        id: 'decomp-trigger', icon: 'triangle-alert', title: 'Why Did Stable HF Deteriorate?', subtitle: 'Precipitating acute decompensation', minutes: 7,
+        scenario: {
+          patient: 'A 63-year-old man with previously stable chronic heart failure',
+          complaint: 'Rapid worsening of breathlessness and edema over four days.',
+          vitals: ['BP 146/86 mmHg', 'HR 138/min irregular', 'RR 25/min', 'O₂ 90%'],
+          findings: ['He stopped his anti-failure medications for one week', 'He increased dietary sodium', 'He started an NSAID for knee pain', 'ECG shows rapid atrial fibrillation', 'No single new structural diagnosis is needed to explain the deterioration']
+        },
+        question: 'What is the best interpretation of this deterioration?',
+        options: [
+          {id:'natural', text:'Unavoidable progression with no precipitating factor'},
+          {id:'multi', text:'Acute decompensation triggered by several recognized precipitants'},
+          {id:'onlyaf', text:'Rapid atrial fibrillation is the only possible trigger'},
+          {id:'onlysalt', text:'Dietary sodium is the only possible trigger'}
+        ],
+        correct: 'multi',
+        learnerVoices: [
+          'I first wanted one cause, but medication non-adherence, salt, NSAIDs, and rapid AF can all push stable disease into decompensation.',
+          'The irregular tachycardia matters, but the iatrogenic and dietary factors also increase congestion.'
+        ],
+        feedbackCorrect: 'That is the right synthesis. Acute decompensation commonly follows infection, acute coronary syndromes, non-compliance, excess sodium, negative inotropes or fluid-retaining drugs, stress, pregnancy, pulmonary embolism, arrhythmias, anemia, or thyrotoxicosis. This patient has several source-listed triggers at once.',
+        feedbackWrong: 'The case is designed to resist single-cause thinking. More than one precipitant can act simultaneously, especially non-adherence, sodium excess, NSAID-related fluid retention, and rapid atrial fibrillation.',
+        hint: 'Count the source-listed precipitants rather than forcing one diagnosis.',
+        patternTitle: 'A stable ventricle can be pushed past compensation',
+        pattern: [
+          'Compensatory sympathetic and RAAS activity temporarily preserve pressure and perfusion.',
+          'Fluid retention, increased afterload, ischemia, infection, arrhythmia, or increased circulatory demand raises the workload.',
+          'Rapid atrial fibrillation shortens diastolic filling time and removes effective atrial contribution.',
+          'The result is rising filling pressure and recurrent pulmonary or systemic congestion.'
+        ],
+        contrast: {
+          prompt: 'Which option is also listed as a precipitant of acute decompensation in the supplied notes?',
+          options: ['Severe anemia or thyrotoxicosis', 'Stable low-intensity exercise', 'A 36-hour ACEI washout'], correct: 0,
+          explanation: 'Severe anemia and thyrotoxicosis increase circulatory demand and can precipitate decompensation.'
+        },
+        teachBack: 'Name at least three precipitants in this patient and explain how they worsen filling pressure, workload, or circulatory demand.',
+        summary: 'Acute decompensation is often multifactorial. Search systematically for infection, ischemia, drugs and adherence, salt load, arrhythmia, embolism, pregnancy, stress, anemia, and thyrotoxicosis.'
+      },
+      {
+        id: 'therapy', icon: 'pill', title: 'Build the Treatment Logic', subtitle: 'Congestion relief versus disease-modifying therapy', minutes: 10,
+        scenario: {
+          patient: 'A 61-year-old man with symptomatic chronic HFrEF, LVEF 32%, now stable and euvolemic',
+          complaint: 'He asks why he needs several medications after the edema improved with a loop diuretic.',
+          vitals: ['BP 122/76 mmHg', 'HR 74/min', 'No resting dyspnea', 'No peripheral edema'],
+          findings: ['Loop diuretic relieved congestion', 'He is stable enough for gradual beta-blocker initiation or up-titration', 'ACEI/ARB or ARNI, beta-blocker, MRA, and SGLT-2 inhibitor target disease pathways', 'Diuretics provide symptomatic relief but have no proven survival benefit in the supplied notes', 'An ACEI must be stopped for 36 hours before starting an ARNI']
+        },
+        question: 'Which statement best captures the treatment strategy?',
+        options: [
+          {id:'diuretic', text:'Continue a loop diuretic alone because symptom relief equals disease modification'},
+          {id:'gdmt', text:'Relieve congestion and also use neurohormonal/myocardial-protective therapy'},
+          {id:'betaacute', text:'Start a high-dose beta-blocker during acute decompensation'},
+          {id:'acearni', text:'Give an ACEI and ARNI together without a washout'}
+        ],
+        correct: 'gdmt',
+        learnerVoices: [
+          'The diuretic treats volume overload, but the other classes target remodeling and neurohormonal pathways. Stable and euvolemic is the time to start low and go slow with a beta-blocker.',
+          'I was equating less edema with complete treatment. The source separates symptomatic relief from survival-directed therapy.'
+        ],
+        feedbackCorrect: 'Exactly. Chronic HFrEF therapy combines preload relief when congested with afterload reduction and neurohormonal/myocardial protection. ACEI/ARB or ARNI, an approved beta-blocker, an MRA, and an SGLT-2 inhibitor target disease pathways; loop diuretics mainly relieve symptoms.',
+        feedbackWrong: 'The key distinction is symptom control versus disease modification. Diuresis can remove congestion without addressing chronic sympathetic, RAAS, and remodeling pathways.',
+        hint: 'Ask which therapies relieve fluid and which therapies are described as improving survival or reducing hospitalization.',
+        patternTitle: 'Three therapeutic targets',
+        pattern: [
+          'Reduce preload: loop diuretics plus salt and, when indicated, fluid restriction relieve congestion.',
+          'Reduce afterload: ACEI/ARB or ARNI, and in selected logic hydralazine plus nitrates, reduce pressure load.',
+          'Protect the myocardium and blunt neurohormonal injury: approved beta-blockers, MRAs, and SGLT-2 inhibitors.',
+          'Start beta-blockers only when stable and euvolemic; use a 36-hour washout when switching from an ACEI to an ARNI.'
+        ],
+        contrast: {
+          prompt: 'Which therapy in the notes is explicitly described as symptomatic relief without a proven survival benefit?',
+          options: ['Loop diuretic', 'SGLT-2 inhibitor', 'ARNI'], correct: 0,
+          explanation: 'Diuretics promote sodium and water excretion to relieve pulmonary and systemic congestion, but the supplied notes state that they do not have a proven survival benefit.'
+        },
+        teachBack: 'Explain the difference between congestion relief and disease-modifying therapy, including the beta-blocker stability rule and the ACEI-to-ARNI washout.',
+        summary: 'Heart failure therapy is layered: relieve volume overload, reduce pressure load, and block chronic neurohormonal injury. Treatment decisions depend on stability, renal function, potassium, and the heart-failure phenotype.'
+      }
+    ];
+
+    const differentialCards = [
+      {id:'d1', front:'Orthopnea + PND + persistent basal crepitations + S₃ + cardiomegaly', diagnosis:'Left-sided heart failure with pulmonary congestion', keys:['Backward pulmonary venous congestion','Elevated filling pressure','Possible low-output features'], mimic:'Right-sided systemic congestion', pearl:'Pulmonary symptoms dominate left-sided backward failure; systemic venous signs dominate right-sided backward failure.'},
+      {id:'d2', front:'Raised JVP + positive hepatojugular reflux + tender hepatomegaly + ascites + edema', diagnosis:'Right-sided heart failure with systemic congestion', keys:['Raised systemic venous pressure','Hepatic congestion','Dependent fluid accumulation'], mimic:'Isolated left-sided backward failure', pearl:'A right-ventricular S₃ and functional tricuspid regurgitation are best heard near the lower left sternal border and increase with inspiration.'},
+      {id:'d3', front:'Heart-failure syndrome + LVEF 56% + impaired relaxation + elevated filling pressure', diagnosis:'HFpEF', keys:['LVEF ≥50%','Diastolic dysfunction','Elevated natriuretic peptide'], mimic:'HFrEF', pearl:'Preserved EF does not mean normal filling pressure.'},
+      {id:'d4', front:'LVEF 38% with congestion symptoms', diagnosis:'HFrEF', keys:['LVEF ≤40%','Systolic dysfunction phenotype','Guideline-directed therapy targets neurohormonal pathways'], mimic:'HFpEF', pearl:'The supplied notes separate HFrEF at ≤40% from HFpEF at ≥50%.'},
+      {id:'d5', front:'BNP below 100 pg/mL or NT-proBNP below 300 pg/mL in an acute presentation', diagnosis:'Acute heart failure is highly unlikely', keys:['Low natriuretic peptide','Rule-out value in acute setting'], mimic:'A high BNP interpreted without the clinical picture', pearl:'Use biomarkers with examination, imaging, ECG, and echocardiography.'},
+      {id:'d6', front:'Pressure overload from hypertension or aortic stenosis', diagnosis:'Tension/pressure overload', keys:['Increased resistance to ejection','Increased ventricular wall tension'], mimic:'Volume overload', pearl:'Regurgitant lesions and shunts are source-listed volume-overload examples.'},
+      {id:'d7', front:'Loop diuretic improves edema but chronic HFrEF remains', diagnosis:'Symptom relief is not complete disease modification', keys:['Natriuresis and diuresis','No proven survival benefit in the notes','Need neurohormonal therapy'], mimic:'Assuming euvolemia equals cured HF', pearl:'ACEI/ARB or ARNI, approved beta-blocker, MRA, and SGLT-2 inhibitor address chronic pathways.'},
+      {id:'d8', front:'Nausea, confusion, yellow-green halos, and arrhythmias in a patient taking digoxin', diagnosis:'Digoxin toxicity', keys:['GI, neurologic, visual, and rhythm features','Risk increased by hypokalemia or renal impairment'], mimic:'Simple worsening heart failure', pearl:'Stop digoxin and potassium-depleting diuretics; life-threatening arrhythmias require digoxin-specific antibody fragments in the supplied notes.'}
+    ];
+
+    const evidenceQuestions = [
+      {id:'e1', stem:'Which combination satisfies the supplied Framingham diagnostic rule for heart failure?', options:['One major criterion alone','Two minor criteria alone','Two major criteria, or one major plus two minor criteria','Any three symptoms regardless of category'], correct:2, explanation:'The supplied notes require at least two major criteria, or one major criterion plus two minor criteria.'},
+      {id:'e2', stem:'Which acute biomarker result makes heart failure highly unlikely in the supplied notes?', options:['BNP 820 pg/mL','BNP below 100 pg/mL','NT-proBNP 900 pg/mL','Any detectable BNP'], correct:1, explanation:'BNP below 100 pg/mL, or NT-proBNP below 300 pg/mL, makes acute heart failure highly unlikely in the supplied notes.'},
+      {id:'e3', stem:'Which chest X-ray finding represents interstitial pulmonary edema?', options:['Kerley B lines','A normal cardiothoracic ratio','Isolated lower-lobe hyperinflation','A widened QRS complex'], correct:0, explanation:'Kerley B lines are short horizontal lines near the lung bases that represent fluid-filled interlobular septa.'},
+      {id:'e4', stem:'Which echocardiographic finding classifies HFrEF in the supplied notes?', options:['LVEF 58%','LVEF 52%','LVEF 40% or less','Any enlarged atrium'], correct:2, explanation:'The notes differentiate HFrEF at LVEF 40% or less from HFpEF at LVEF 50% or more.'},
+      {id:'e5', stem:'When should an approved beta-blocker be initiated in chronic heart failure according to the supplied notes?', options:['During cardiogenic shock','During acute decompensation with pulmonary edema','Only when stable and euvolemic, starting low and increasing gradually','Only after stopping all other therapy'], correct:2, explanation:'The clinical rule is to initiate beta-blockers only when the patient is stable and euvolemic, using a “start low, go slow” approach.'},
+      {id:'e6', stem:'What is required when switching from an ACE inhibitor to sacubitril/valsartan?', options:['No interval is needed','A 12-hour interval','A 36-hour washout','Permanent avoidance of all RAAS therapy'], correct:2, explanation:'A 36-hour washout is mandatory in the supplied notes to reduce the risk of angioedema.'},
+      {id:'e7', stem:'Which treatment is described as relieving congestion without a proven survival benefit?', options:['Loop diuretics','SGLT-2 inhibitors','ARNI','Approved beta-blockers'], correct:0, explanation:'Loop diuretics relieve pulmonary and systemic congestion through sodium and water excretion, but the notes state that they do not have a proven survival benefit.'},
+      {id:'e8', stem:'Which local sign supports right-ventricular enlargement?', options:['Displaced apical impulse only','Left parasternal heave','Kerley B lines','Cephalization of pulmonary vessels'], correct:1, explanation:'A left parasternal heave is a local cardiovascular sign of right-ventricular enlargement.'}
+    ];
+
+    const quizQuestions = [
+      {id:'q1', stem:'Heart failure is best defined as:', options:['Any tachycardia with edema','Inability to meet metabolic needs at a normal output, or doing so only at elevated filling pressures','Any ejection fraction below 60%','Only acute pulmonary edema'], correct:1, explanation:'The supplied definition centers on inadequate pump performance for metabolic needs, or adequate output achieved only with elevated ventricular filling pressure.'},
+      {id:'q2', stem:'Which is a Framingham major criterion in the supplied notes?', options:['Bilateral ankle edema','Night cough','Paroxysmal nocturnal dyspnea','Dyspnea on ordinary exertion'], correct:2, explanation:'PND is listed as a major criterion. Bilateral ankle edema, night cough, and dyspnea on ordinary exertion are listed as minor criteria.'},
+      {id:'q3', stem:'Which lesion is a left-ventricular volume-overload cause?', options:['Aortic stenosis','Systemic hypertension','Aortic regurgitation','Pulmonary stenosis'], correct:2, explanation:'Aortic regurgitation is listed under left-ventricular volume overload. Aortic stenosis and systemic hypertension are pressure-overload causes.'},
+      {id:'q4', stem:'Chronic sympathetic activation ultimately worsens heart failure because it:', options:['Always lowers oxygen demand','Causes β₁-receptor downregulation, toxicity, and remodeling','Prevents vasoconstriction','Eliminates arrhythmia risk'], correct:1, explanation:'The supplied notes describe increased oxygen demand, β₁-receptor downregulation, direct myocyte toxicity, and remodeling.'},
+      {id:'q5', stem:'Which symptom is most characteristic of backward left-sided failure?', options:['Orthopnea','Tender hepatomegaly','Dependent sacral edema only','Right hypochondrial pain'], correct:0, explanation:'Orthopnea is a pulmonary-congestion symptom of left-sided failure.'},
+      {id:'q6', stem:'A sustained rise in JVP of more than 3 cm during right-upper-quadrant compression supports:', options:['An overloaded right ventricle','Normal right-sided filling','Isolated aortic stenosis only','Absence of venous congestion'], correct:0, explanation:'The supplied notes describe this hepatojugular reflux response as evidence of an overloaded right ventricle.'},
+      {id:'q7', stem:'Which chest X-ray pattern corresponds to alveolar edema?', options:['Bat-wing perihilar infiltrates','Kerley B lines only','Isolated cardiomegaly without lung change','A normal costophrenic angle'], correct:0, explanation:'The notes describe “bat-wing” or “butterfly” perihilar infiltrates as alveolar edema.'},
+      {id:'q8', stem:'Which approved beta-blocker is listed for chronic HFrEF?', options:['Carvedilol','Verapamil','Diltiazem','Propranolol only'], correct:0, explanation:'Carvedilol, metoprolol succinate, and bisoprolol are the approved agents listed in the supplied notes.'},
+      {id:'q9', stem:'Which factor increases the risk of digoxin toxicity?', options:['Hyperkalemia alone','Hypokalemia','Low calcium','Normal renal function'], correct:1, explanation:'Hypokalemia predisposes to digoxin toxicity because potassium competes with digoxin at the Na⁺/K⁺-ATPase pump.'},
+      {id:'q10', stem:'Which treatment is included for HFpEF in the supplied notes?', options:['SGLT-2 inhibitor plus control of blood pressure and congestion','High-dose inotrope for every stable patient','Routine digoxin for all patients','No treatment because EF is preserved'], correct:0, explanation:'The notes emphasize aggressive blood-pressure control, SGLT-2 inhibitors, judicious diuretics for congestion, and treatment of comorbidities.'},
+      {id:'q11', stem:'CRT is described for selected HFrEF patients with:', options:['LVEF at least 60% and narrow QRS','LVEF 35% or less with widened QRS, typically LBBB','Any right-sided edema','Only elevated BNP'], correct:1, explanation:'The notes describe CRT for HFrEF with LVEF 35% or less and a widened QRS, typically LBBB with QRS duration around 130–150 ms or more.'},
+      {id:'q12', stem:'A sudden weight gain of 2 kg in 3 days most strongly suggests:', options:['Successful decongestion','Fluid retention requiring reassessment of diuretic therapy','Digoxin toxicity alone','Reduced preload'], correct:1, explanation:'The supplied non-pharmacological plan uses a 2 kg gain in 3 days as a warning of fluid retention.'}
+    ];
+
+    function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); }
+    function updateVisit() {
+      if (appState.lastVisit !== todayISO()) {
+        const yesterday = addDays(todayISO(), -1);
+        appState.streak = appState.lastVisit === yesterday ? appState.streak + 1 : 1;
+        appState.lastVisit = todayISO();
+        saveState();
+      }
+    }
+    function escapeHTML(value='') { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+    function showToast(message, type='info') {
+      const colors = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-700' : 'bg-slate-800';
+      const el = document.createElement('div');
+      el.className = `toast ${colors} rounded-xl px-4 py-3 text-sm font-bold text-white shadow-xl`;
+      el.textContent = message;
+      document.getElementById('toastContainer').appendChild(el);
+      setTimeout(() => el.remove(), 2800);
+    }
+    function updateMetrics() {
+      document.getElementById('xpDisplay').textContent = appState.xp;
+      document.getElementById('streakDisplay').textContent = appState.streak;
+    }
+    function icon(name, cls='h-5 w-5') { return `<i data-lucide="${name}" class="${cls}" aria-hidden="true"></i>`; }
+    function progressFor(id) { return appState.caseProgress[id] || {step:0, answered:false, contrastDone:false, teachBack:'', completed:false}; }
+    function completedCount() { return Object.values(appState.caseProgress).filter(x => x.completed).length; }
+    function dueReviewCount() { return differentialCards.filter(c => !appState.srsSchedule[c.id] || appState.srsSchedule[c.id].due <= todayISO()).length; }
+
+    function switchTab(tabName) {
+      appState.activeTab = tabName;
+      saveState();
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        const active = btn.dataset.tab === tabName;
+        btn.setAttribute('aria-selected', String(active));
+        btn.classList.toggle('border-rose-600', active);
+        btn.classList.toggle('text-rose-700', active);
+        btn.classList.toggle('dark:text-rose-300', active);
+        btn.classList.toggle('border-transparent', !active);
+        btn.classList.toggle('text-slate-500', !active);
+        if (active) btn.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+      });
+      renderActiveTab();
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    function renderActiveTab() {
+      if (appState.activeTab === 'cases') renderCases();
+      if (appState.activeTab === 'read') renderRead();
+      if (appState.activeTab === 'differentials') renderDifferentials();
+      if (appState.activeTab === 'evidence') renderEvidence();
+      if (appState.activeTab === 'reviews') renderReviews();
+      if (appState.activeTab === 'quiz') renderQuiz();
+      setTimeout(() => lucide.createIcons(), 0);
+    }
+
+    function renderCases() {
+      const container = document.getElementById('cases-tab');
+      const current = cases.find(c => c.id === appState.currentCaseId) || cases[0];
+      const p = progressFor(current.id);
+      const hasStarted = p.step > 0 || p.answered || p.teachBack;
+      container.innerHTML = `
+        <div class="space-y-5">
+          <section class="card-shadow overflow-hidden rounded-3xl border border-rose-100 bg-white dark:border-slate-700 dark:bg-slate-900">
+            <div class="bg-gradient-to-br from-slate-950 via-red-950 to-rose-900 px-5 py-6 text-white sm:px-7">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs font-black uppercase tracking-[.22em] text-rose-200">Today’s clinical session</p>
+                  <h2 class="mt-2 text-2xl font-black sm:text-3xl">Reason from congestion to phenotype</h2>
+                  <p class="mt-2 max-w-2xl text-sm leading-6 text-rose-50/90">Predict first, connect findings to hemodynamics, compare the nearest pattern, then defend your conclusion.</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div class="rounded-xl bg-white/10 px-3 py-2"><div class="text-lg font-black">${completedCount()}/${cases.length}</div><div>Cases</div></div>
+                  <div class="rounded-xl bg-white/10 px-3 py-2"><div class="text-lg font-black">${dueReviewCount()}</div><div>Due</div></div>
+                  <div class="rounded-xl bg-white/10 px-3 py-2"><div class="text-lg font-black">${appState.xp}</div><div>XP</div></div>
+                </div>
+              </div>
+              <div class="mt-5 rounded-2xl bg-white/10 p-4 backdrop-blur">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    <span class="grid h-11 w-11 place-items-center rounded-xl bg-white/15">${icon(current.icon)}</span>
+                    <div><p class="font-black">${escapeHTML(current.title)}</p><p class="text-xs text-rose-100">${hasStarted ? `Step ${Math.min((p.step || 0) + 1, 5)} of 5` : 'Recommended next case'} • ${current.minutes} min</p></div>
+                  </div>
+                  <button onclick="openCase('${current.id}')" class="focus-ring rounded-xl bg-white px-5 py-3 font-black text-slate-950 hover:bg-rose-100">${hasStarted && !p.completed ? 'Resume case' : p.completed ? 'Review case' : 'Start case'}</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="grid gap-3 sm:grid-cols-3">
+            <article class="rounded-2xl border border-rose-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+              <div class="flex items-center gap-3"><span class="grid h-10 w-10 place-items-center rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">${icon('stethoscope')}</span><div><p class="font-black">Recognize</p><p class="text-xs text-slate-500">Low output vs congestion</p></div></div>
+            </article>
+            <article class="rounded-2xl border border-rose-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+              <div class="flex items-center gap-3"><span class="grid h-10 w-10 place-items-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300">${icon('scan-heart')}</span><div><p class="font-black">Classify</p><p class="text-xs text-slate-500">Left/right and EF phenotype</p></div></div>
+            </article>
+            <article class="rounded-2xl border border-rose-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+              <div class="flex items-center gap-3"><span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">${icon('shield-check')}</span><div><p class="font-black">Synthesize</p><p class="text-xs text-slate-500">Evidence and therapy logic</p></div></div>
+            </article>
+          </section>
+
+          <section>
+            <div class="mb-3 flex items-end justify-between gap-3">
+              <div><p class="text-xs font-black uppercase tracking-[.2em] text-rose-700 dark:text-rose-300">Guided cases</p><h2 class="mt-1 text-xl font-black">Choose a Heart Failure reasoning problem</h2></div>
+              <span class="text-xs font-semibold text-slate-500">${completedCount()} mastered</span>
+            </div>
+            <div class="grid gap-4 md:grid-cols-2">
+              ${cases.map(c => {
+                const cp = progressFor(c.id);
+                const pct = cp.completed ? 100 : Math.min(80, (cp.step || 0) * 20);
+                return `<article class="card-shadow rounded-2xl border border-rose-100 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+                  <div class="flex items-start gap-3">
+                    <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">${icon(c.icon)}</span>
+                    <div class="min-w-0 flex-1"><h3 class="font-black">${escapeHTML(c.title)}</h3><p class="mt-1 text-sm text-slate-500 dark:text-slate-400">${escapeHTML(c.subtitle)}</p></div>
+                    ${cp.completed ? '<span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-black text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Mastered</span>' : ''}
+                  </div>
+                  <div class="mt-4 h-2 overflow-hidden rounded-full bg-rose-50 dark:bg-slate-800"><div class="h-full rounded-full bg-gradient-to-r from-rose-500 to-red-700" style="width:${pct}%"></div></div>
+                  <div class="mt-4 flex items-center justify-between gap-3"><span class="text-xs font-semibold text-slate-500">${c.minutes} min • 5 steps</span><button onclick="openCase('${c.id}')" class="focus-ring rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-black hover:border-rose-500 hover:text-rose-700 dark:border-slate-600">${cp.completed ? 'Review' : 'Open'}</button></div>
+                </article>`;
+              }).join('')}
+            </div>
+          </section>
+        </div>`;
+    }
+
+    function openCase(id) { appState.currentCaseId = id; appState.activeTab = 'read'; saveState(); switchTab('read'); }
+
+    function renderScenarioStep(c, p) {
+      return `<div class="slide-up space-y-6">
+        <div><p class="text-xs font-black uppercase tracking-[.2em] text-rose-700 dark:text-rose-300">Step 1 • Clinical scenario</p><h3 class="mt-2 text-2xl font-black">What is the dominant syndrome?</h3><p class="mt-2 leading-7 text-slate-600 dark:text-slate-300">${escapeHTML(c.scenario.patient)} presents with <strong>${escapeHTML(c.scenario.complaint)}</strong></p></div>
+        <div class="grid gap-3 sm:grid-cols-4">${c.scenario.vitals.map(v => `<div class="rounded-2xl border border-rose-100 bg-rose-50/60 p-4 text-center font-mono font-black dark:border-slate-700 dark:bg-slate-800">${escapeHTML(v)}</div>`).join('')}</div>
+        <div><h4 class="font-black">Initial findings</h4><div class="mt-3 grid gap-2 sm:grid-cols-2">${c.scenario.findings.map((f,i) => `<button onclick="explainFinding(this,'${escapeHTML(f)}')" class="finding focus-ring min-h-0 rounded-xl p-3 text-left text-sm font-semibold"><span class="mr-2 text-rose-600">${i+1}.</span>${escapeHTML(f)}</button>`).join('')}</div><p class="mt-2 text-xs text-slate-500">Tap findings that carry diagnostic weight.</p></div>
+        <div class="rounded-2xl bg-amber-50 p-4 dark:bg-amber-950/30"><p class="text-sm font-black text-amber-900 dark:text-amber-100">Mentor prompt</p><p class="mt-1 text-sm leading-6 text-amber-800 dark:text-amber-200">Before naming a diagnosis, classify each clue as low output, pulmonary congestion, systemic congestion, structural evidence, or a treatment clue.</p></div>
+        <button onclick="setCaseStep('${c.id}',1)" class="focus-ring w-full rounded-2xl bg-rose-700 px-5 py-3.5 font-black text-white hover:bg-rose-800">Make a prediction ${icon('arrow-right','ml-1 inline h-4 w-4')}</button>
+      </div>`;
+    }
+    function explainFinding(btn, text) { btn.classList.toggle('marked'); showToast(`Marked as important: ${text}`); }
+
+    function renderPredictionStep(c, p) {
+      const chosen = p.selectedDiagnosis;
+      return `<div class="slide-up space-y-6">
+        <div><p class="text-xs font-black uppercase tracking-[.2em] text-rose-700 dark:text-rose-300">Step 2 • Prediction</p><h3 class="mt-2 text-2xl font-black">${escapeHTML(c.question)}</h3><p class="mt-2 text-sm text-slate-500">Commit to one answer before opening a clue.</p></div>
+        <div class="space-y-2" id="caseOptions">${c.options.map((o,i) => `<button ${p.answered ? 'disabled' : ''} onclick="answerCase('${c.id}','${o.id}')" class="answer-btn focus-ring w-full rounded-2xl border-2 ${chosen === o.id ? (o.id === c.correct ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : 'border-rose-500 bg-rose-50 dark:bg-rose-950/30') : 'border-rose-100 dark:border-slate-700'} p-4 text-left font-bold hover:border-rose-500 disabled:cursor-default"><span class="mr-2 text-slate-400">${String.fromCharCode(65+i)}.</span>${escapeHTML(o.text)}</button>`).join('')}</div>
+        <details class="rounded-2xl border border-rose-100 bg-rose-50/60 p-4 dark:border-slate-700 dark:bg-slate-800"><summary class="cursor-pointer font-black">Need one clue?</summary><p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">${escapeHTML(c.hint)}</p></details>
+        ${p.answered ? `<div class="slide-up rounded-2xl ${p.selectedDiagnosis === c.correct ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30' : 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30'} border p-5"><p class="font-black">${p.selectedDiagnosis === c.correct ? 'Exactly—you found the pattern.' : 'That is a common first impression.'}</p><p class="mt-2 leading-7">${escapeHTML(p.selectedDiagnosis === c.correct ? c.feedbackCorrect : c.feedbackWrong)}</p></div>
+          <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs font-black uppercase tracking-[.16em] text-slate-500">A realistic learner might say</p><p class="mt-2 italic leading-7">“${escapeHTML(c.learnerVoices[p.selectedDiagnosis === c.correct ? 0 : 1])}”</p></div>
+          <button onclick="setCaseStep('${c.id}',2)" class="focus-ring w-full rounded-2xl bg-rose-700 px-5 py-3.5 font-black text-white hover:bg-rose-800">Connect the mechanism ${icon('arrow-right','ml-1 inline h-4 w-4')}</button>` : ''}
+      </div>`;
+    }
+
+    function answerCase(caseId, selected) {
+      const c = cases.find(x => x.id === caseId);
+      const p = progressFor(caseId);
+      if (p.answered) return;
+      p.answered = true; p.selectedDiagnosis = selected; p.step = 1;
+      appState.caseProgress[caseId] = p;
+      if (selected === c.correct) { appState.xp += 12; showToast('Strong diagnostic reasoning +12 XP', 'success'); }
+      else { appState.misconceptionHistory.push({caseId, selected, date:todayISO()}); showToast('Use the narrower clue and rebuild the pattern', 'info'); }
+      saveState(); updateMetrics(); renderRead();
+    }
+
+    function renderPatternStep(c, p) {
+      return `<div class="slide-up space-y-6">
+        <div><p class="text-xs font-black uppercase tracking-[.2em] text-rose-700 dark:text-rose-300">Step 3 • Pattern discovery</p><h3 class="mt-2 text-2xl font-black">${escapeHTML(c.patternTitle)}</h3><p class="mt-2 text-slate-600 dark:text-slate-300">Turn isolated signs into one hemodynamic story.</p></div>
+        <div class="space-y-3">${c.pattern.map((x,i) => `<div class="step-line relative flex gap-3 rounded-2xl border border-rose-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800"><span class="z-10 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-rose-100 text-sm font-black text-rose-700 dark:bg-rose-950 dark:text-rose-300">${i+1}</span><p class="leading-7">${escapeHTML(x)}</p></div>`).join('')}</div>
+        <div class="rounded-2xl border border-rose-200 bg-rose-50 p-5 dark:border-rose-800 dark:bg-rose-950/30"><p class="font-black text-rose-950 dark:text-rose-100">Diagnostic argument</p><p class="mt-2 leading-7 text-rose-950/90 dark:text-rose-100/90">${escapeHTML(c.feedbackCorrect)}</p></div>
+        <button onclick="setCaseStep('${c.id}',3)" class="focus-ring w-full rounded-2xl bg-rose-700 px-5 py-3.5 font-black text-white hover:bg-rose-800">Compare the neighboring pattern ${icon('arrow-right','ml-1 inline h-4 w-4')}</button>
+      </div>`;
+    }
+
+    function renderContrastStep(c, p) {
+      return `<div class="slide-up space-y-6">
+        <div><p class="text-xs font-black uppercase tracking-[.2em] text-rose-700 dark:text-rose-300">Step 4 • Contrast</p><h3 class="mt-2 text-2xl font-black">Which nearby diagnosis fits better?</h3><p class="mt-3 rounded-2xl bg-slate-50 p-5 leading-7 dark:bg-slate-800">${escapeHTML(c.contrast.prompt)}</p></div>
+        <div class="grid gap-3 sm:grid-cols-2">${c.contrast.options.map((o,i) => `<button ${p.contrastDone ? 'disabled' : ''} onclick="answerContrast('${c.id}',${i})" class="focus-ring rounded-2xl border-2 ${p.contrastDone && i === c.contrast.correct ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : p.contrastDone && i === p.contrastAnswer && i !== c.contrast.correct ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/30' : 'border-rose-100 dark:border-slate-700'} p-4 text-left font-bold hover:border-rose-500">${escapeHTML(o)}</button>`).join('')}</div>
+        ${p.contrastDone ? `<div class="slide-up rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-800 dark:bg-emerald-950/30"><p class="font-black">Contrast revealed</p><p class="mt-2 leading-7">${escapeHTML(c.contrast.explanation)}</p></div><button onclick="setCaseStep('${c.id}',4)" class="focus-ring w-full rounded-2xl bg-rose-700 px-5 py-3.5 font-black text-white hover:bg-rose-800">Defend the diagnosis ${icon('arrow-right','ml-1 inline h-4 w-4')}</button>` : ''}
+      </div>`;
+    }
+    function answerContrast(caseId, index) {
+      const c = cases.find(x => x.id === caseId);
+      const p = progressFor(caseId);
+      if (p.contrastDone) return;
+      p.contrastDone = true; p.contrastAnswer = index; p.step = 3;
+      appState.caseProgress[caseId] = p;
+      if (index === c.contrast.correct) { appState.xp += 8; showToast('You separated the neighboring pattern +8 XP', 'success'); }
+      else showToast('Use the discriminator in the explanation', 'info');
+      saveState(); updateMetrics(); renderRead();
+    }
+
+    function renderTeachBackStep(c, p) {
+      return `<div class="slide-up space-y-6">
+        <div><p class="text-xs font-black uppercase tracking-[.2em] text-rose-700 dark:text-rose-300">Step 5 • Teach-back</p><h3 class="mt-2 text-2xl font-black">Explain it like the attending</h3><p class="mt-2 leading-7 text-slate-600 dark:text-slate-300">${escapeHTML(c.teachBack)}</p></div>
+        <textarea id="teachBackInput" rows="6" class="focus-ring w-full rounded-2xl border-2 border-rose-100 bg-white p-4 leading-7 dark:border-slate-700 dark:bg-slate-800" placeholder="Build your diagnostic argument here...">${escapeHTML(p.teachBack || '')}</textarea>
+        <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="font-black">A strong answer usually includes</p><div class="mt-2 flex flex-wrap gap-2"><span class="rounded-full bg-white px-3 py-1 text-xs font-bold dark:bg-slate-900">Syndrome</span><span class="rounded-full bg-white px-3 py-1 text-xs font-bold dark:bg-slate-900">Supporting findings</span><span class="rounded-full bg-white px-3 py-1 text-xs font-bold dark:bg-slate-900">Mechanism</span><span class="rounded-full bg-white px-3 py-1 text-xs font-bold dark:bg-slate-900">Closest contrast</span></div></div>
+        ${p.completed ? `<div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-800 dark:bg-emerald-950/30"><div class="flex items-center gap-2"><span class="grid h-9 w-9 place-items-center rounded-full bg-emerald-600 text-white">${icon('check','h-5 w-5')}</span><p class="font-black">Case completed</p></div><p class="mt-3 leading-7">${escapeHTML(c.summary)}</p></div><div class="grid gap-3 sm:grid-cols-2"><button onclick="switchTab('differentials')" class="focus-ring rounded-2xl border-2 border-rose-700 px-5 py-3.5 font-black text-rose-700 dark:text-rose-300">Explore deeper</button><button onclick="nextCase('${c.id}')" class="focus-ring rounded-2xl bg-rose-700 px-5 py-3.5 font-black text-white hover:bg-rose-800">Next case</button></div>` : `<button onclick="completeCase('${c.id}')" class="focus-ring w-full rounded-2xl bg-rose-700 px-5 py-3.5 font-black text-white hover:bg-rose-800">Complete case</button>`}
+      </div>`;
+    }
+    function completeCase(caseId) {
+      const text = document.getElementById('teachBackInput').value.trim();
+      if (text.length < 25) { showToast('Add at least two clinical sentences before completing', 'error'); return; }
+      const p = progressFor(caseId);
+      p.teachBack = text; p.completed = true; p.step = 4; p.completedDate = todayISO();
+      appState.caseProgress[caseId] = p; appState.xp += 20;
+      if (!appState.streak) appState.streak = 1;
+      saveState(); updateMetrics(); showToast('Case mastered +20 XP', 'success'); renderRead();
+    }
+    function nextCase(id) { const idx = cases.findIndex(c => c.id === id); const next = cases[(idx + 1) % cases.length]; appState.currentCaseId = next.id; saveState(); renderRead(); }
+    function setCaseStep(id, step) { const p = progressFor(id); p.step = step; appState.caseProgress[id] = p; saveState(); renderRead(); }
+
+    function renderReferenceSection(title, iconName, content, open=false) {
+      return `<details ${open ? 'open' : ''} class="card-shadow rounded-2xl border border-rose-100 bg-white dark:border-slate-700 dark:bg-slate-900"><summary class="focus-ring flex cursor-pointer list-none items-center gap-3 p-5"><span class="grid h-11 w-11 place-items-center rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">${icon(iconName)}</span><span class="text-lg font-black">${title}</span><span class="ml-auto">${icon('chevron-down')}</span></summary><div class="prose-med border-t border-rose-100 p-5 text-slate-700 dark:border-slate-700 dark:text-slate-200">${content}</div></details>`;
+    }
+
+    function renderRead() { if (appState.currentCaseId) renderCaseRead(); else renderReference(); }
+    function renderCaseRead() {
+      const container = document.getElementById('read-tab');
+      const c = cases.find(x => x.id === appState.currentCaseId);
+      if (!c) { appState.currentCaseId = null; renderReference(); return; }
+      const p = progressFor(c.id);
+      const step = Math.min(p.step || 0, 4);
+      const steps = ['Recognize','Predict','Mechanism','Contrast','Teach-back'];
+      const body = [renderScenarioStep, renderPredictionStep, renderPatternStep, renderContrastStep, renderTeachBackStep][step](c,p);
+      container.innerHTML = `<div class="mx-auto max-w-4xl space-y-4"><div class="flex flex-wrap items-center justify-between gap-3"><button onclick="appState.currentCaseId=null;saveState();renderReference()" class="focus-ring inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-900">${icon('book-open','h-4 w-4')} Open reference notes</button><button onclick="switchTab('cases')" class="focus-ring inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-900">${icon('layout-grid','h-4 w-4')} All cases</button></div><section class="card-shadow overflow-hidden rounded-3xl border border-rose-100 bg-white dark:border-slate-700 dark:bg-slate-900"><div class="border-b border-rose-100 bg-rose-50/70 px-5 py-5 dark:border-slate-700 dark:bg-slate-800/70 sm:px-7"><div class="flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-2xl bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">${icon(c.icon)}</span><div><p class="text-xs font-black uppercase tracking-[.18em] text-rose-700 dark:text-rose-300">Guided Heart Failure case</p><h2 class="text-2xl font-black">${escapeHTML(c.title)}</h2><p class="text-sm text-slate-500 dark:text-slate-400">${escapeHTML(c.subtitle)}</p></div></div><div class="mt-5 grid grid-cols-5 gap-1">${steps.map((s,i) => `<div><div class="h-2 rounded-full ${i <= step ? 'bg-rose-600' : 'bg-rose-100 dark:bg-slate-700'}"></div><p class="mt-1 hidden text-center text-[10px] font-bold text-slate-500 sm:block">${s}</p></div>`).join('')}</div></div><div class="p-5 sm:p-7">${body}</div></section></div>`;
+      setTimeout(() => lucide.createIcons(), 0);
+    }
+
+    function renderReference() {
+      const container = document.getElementById('read-tab');
+      appState.currentCaseId = null; saveState();
+      const definition = `
+        <h2>Definition</h2>
+        <p>Heart failure is a complex clinical syndrome in which the heart cannot pump blood at a rate sufficient for the body’s metabolic requirements, or can do so only at elevated ventricular filling pressures despite adequate venous return.</p>
+        <h2>Framingham clinical diagnosis</h2>
+        <div class="rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-800 dark:bg-rose-950/30"><p class="font-black">Diagnostic rule</p><p class="mt-1">At least <strong>2 major criteria</strong>, or <strong>1 major plus 2 minor criteria</strong>.</p></div>
+        <div class="mt-4 overflow-x-auto"><table class="min-w-[650px] text-sm"><thead><tr class="bg-slate-100 dark:bg-slate-800"><th>Major criteria</th><th>Minor criteria</th></tr></thead><tbody><tr><td><ul><li>Paroxysmal nocturnal dyspnea</li><li>Neck-vein distention</li><li>Pulmonary rales/crepitations</li><li>Cardiomegaly on chest X-ray</li><li>Acute pulmonary edema</li><li>Third heart sound</li><li>Hepatojugular reflux</li><li>Weight loss greater than 4.5 kg in 5 days after treatment</li></ul></td><td><ul><li>Bilateral ankle edema</li><li>Night cough</li><li>Dyspnea on ordinary exertion</li><li>Hepatomegaly</li><li>Pleural effusion</li><li>Tachycardia above 120 beats/min</li></ul></td></tr></tbody></table></div>`;
+
+      const causes = `
+        <h2>Etiological classification</h2>
+        <div class="grid gap-4 md:grid-cols-3">
+          <div class="rounded-2xl bg-rose-50 p-4 dark:bg-rose-950/30"><h3 class="mt-0">Pressure overload</h3><p>The ventricle generates increased wall tension against resistance.</p><p><strong>LV:</strong> systemic hypertension, aortic stenosis, coarctation.</p><p><strong>RV:</strong> pulmonary hypertension, pulmonary stenosis, cor pulmonale.</p></div>
+          <div class="rounded-2xl bg-violet-50 p-4 dark:bg-violet-950/30"><h3 class="mt-0">Volume overload</h3><p>The ventricle accommodates excess diastolic volume.</p><p><strong>LV:</strong> MR, AR, VSD, PDA.</p><p><strong>RV:</strong> TR, ASD, VSD.</p></div>
+          <div class="rounded-2xl bg-slate-100 p-4 dark:bg-slate-800"><h3 class="mt-0">Primary myocardial dysfunction</h3><p>Intrinsic muscle disease impairs contractility.</p><p>Ischemic heart disease, dilated cardiomyopathy, and myocarditis.</p></div>
+        </div>
+        <h2>Compensation becomes decompensation</h2>
+        <ol><li>Sympathetic activation raises heart rate and contractility and produces α₁-mediated vasoconstriction.</li><li>Chronic activation raises oxygen demand, downregulates β₁ receptors, injures myocytes, and drives remodeling.</li><li>Renal hypoperfusion and sympathetic stimulation activate RAAS.</li><li>Angiotensin II raises afterload; aldosterone-mediated sodium and water retention raises preload.</li><li>Excessive volume and vascular resistance eventually worsen pulmonary and systemic congestion.</li></ol>`;
+
+      const clinical = `
+        <h2>Left-sided heart failure</h2>
+        <div class="grid gap-4 md:grid-cols-2"><div class="rounded-2xl border border-rose-100 p-4 dark:border-slate-700"><h3 class="mt-0">Forward: low output</h3><p>Fatigue, exercise intolerance, dizziness, confusion, syncope, oliguria; pallor, cold extremities, peripheral cyanosis, thready pulse, narrow pulse pressure, and low systolic pressure.</p></div><div class="rounded-2xl border border-rose-100 p-4 dark:border-slate-700"><h3 class="mt-0">Backward: pulmonary congestion</h3><p>Exertional dyspnea, orthopnea, PND, bilateral fine basal crepitations that do not clear with cough, and pleural effusion.</p></div></div>
+        <h3>Local signs</h3><ul><li>Displaced hyperdynamic or thrusting apex.</li><li><strong>S₃:</strong> early diastolic sound from rapid filling into a stiff or dilated ventricle.</li><li><strong>S₄:</strong> atrial contraction into a non-compliant ventricle, associated with diastolic dysfunction.</li><li>Functional pansystolic mitral-regurgitation murmur from annular dilatation.</li></ul>
+        <h2>Right-sided heart failure</h2>
+        <div class="grid gap-4 md:grid-cols-2"><div class="rounded-2xl border border-violet-100 p-4 dark:border-slate-700"><h3 class="mt-0">Forward</h3><p>Reduced flow to the lungs and then the left heart, producing low-output manifestations similar to left-sided failure.</p></div><div class="rounded-2xl border border-violet-100 p-4 dark:border-slate-700"><h3 class="mt-0">Backward: systemic congestion</h3><p>Right hypochondrial pain, anorexia, nausea, bloating, raised JVP, hepatojugular reflux, tender hepatomegaly, ascites, pleural effusion, and dependent pitting edema.</p></div></div>
+        <h3>Local signs</h3><ul><li>Left parasternal heave.</li><li>Loud pulmonary component of S₂ when pulmonary hypertension is present.</li><li>Right-ventricular S₃ at the lower left sternal border, increasing with inspiration.</li><li>Functional tricuspid-regurgitation murmur that increases with inspiration.</li></ul>`;
+
+      const diagnostics = `
+        <h2>Biomarkers</h2><p>BNP and NT-proBNP are released in response to ventricular wall stretch and volume overload. In the supplied notes, <strong>BNP below 100 pg/mL</strong> or <strong>NT-proBNP below 300 pg/mL</strong> makes acute heart failure highly unlikely.</p>
+        <h2>ECG</h2><p>Look for pathological Q waves, ischemic ST–T changes, LVH, bundle-branch block, and arrhythmias such as atrial fibrillation.</p>
+        <h2>Chest X-ray</h2>
+        <div class="grid gap-3 sm:grid-cols-2"><div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><strong>Cardiomegaly</strong><br>Cardiothoracic ratio above 50%.</div><div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><strong>Cephalization</strong><br>Dilated upper-lobe vessels from pulmonary venous congestion.</div><div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><strong>Kerley B lines</strong><br>Fluid-filled interlobular septa in interstitial edema.</div><div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><strong>Bat-wing pattern</strong><br>Perihilar infiltrates in alveolar edema.</div><div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><strong>Pleural effusion</strong><br>Blunting of costophrenic angles.</div></div>
+        <h2>Echocardiography</h2><p>Transthoracic echocardiography is the mandatory gold-standard diagnostic test in the supplied notes. Assess LVEF, chamber size, wall thickness, valves, and diastolic indices such as E/A and E/e′.</p>
+        <div class="mt-4 grid gap-3 sm:grid-cols-2"><div class="rounded-2xl bg-rose-50 p-4 dark:bg-rose-950/30"><p class="text-xs font-black uppercase tracking-[.16em] text-rose-700">HFrEF</p><p class="mt-1 text-2xl font-black">LVEF ≤40%</p></div><div class="rounded-2xl bg-violet-50 p-4 dark:bg-violet-950/30"><p class="text-xs font-black uppercase tracking-[.16em] text-violet-700 dark:text-violet-300">HFpEF</p><p class="mt-1 text-2xl font-black">LVEF ≥50%</p></div></div>`;
+
+      const precip = `
+        <h2>Recognized precipitating factors</h2>
+        <div class="grid gap-3 sm:grid-cols-2"><div class="rounded-xl border border-rose-100 p-4 dark:border-slate-700"><strong>Infection</strong><br>Pneumonia or infective endocarditis.</div><div class="rounded-xl border border-rose-100 p-4 dark:border-slate-700"><strong>Acute coronary syndrome</strong><br>Myocardial infarction or unstable angina.</div><div class="rounded-xl border border-rose-100 p-4 dark:border-slate-700"><strong>Iatrogenic/dietary</strong><br>Non-compliance, excess sodium, negative inotropes, NSAIDs, or steroids.</div><div class="rounded-xl border border-rose-100 p-4 dark:border-slate-700"><strong>Hemodynamic stress</strong><br>Severe physical or emotional stress, pregnancy, and labor.</div><div class="rounded-xl border border-rose-100 p-4 dark:border-slate-700"><strong>Pulmonary embolism</strong><br>Raises right-ventricular load.</div><div class="rounded-xl border border-rose-100 p-4 dark:border-slate-700"><strong>Arrhythmia</strong><br>Rapid AF shortens filling time and compromises atrial kick.</div><div class="rounded-xl border border-rose-100 p-4 dark:border-slate-700"><strong>Increased demand</strong><br>Severe anemia or thyrotoxicosis.</div></div>`;
+
+      const therapy = `
+        <h2>Non-pharmacological measures</h2><ul><li>Dietary sodium below 2 g/day.</li><li>Fluid restriction to 1.5–2.0 L/day in severe or hyponatremic patients.</li><li>Daily weight; a 2 kg increase in 3 days suggests fluid retention.</li><li>Regular low-intensity aerobic activity during stable phases.</li></ul>
+        <h2>Therapeutic blueprint</h2>
+        <div class="grid gap-4 md:grid-cols-3"><div class="rounded-2xl bg-cyan-50 p-4 dark:bg-cyan-950/30"><h3 class="mt-0">Reduce preload</h3><p>Loop diuretics, sodium restriction, and selected fluid restriction.</p></div><div class="rounded-2xl bg-amber-50 p-4 dark:bg-amber-950/30"><h3 class="mt-0">Reduce afterload</h3><p>ACEI/ARB or ARNI; hydralazine plus nitrates is included in the source blueprint.</p></div><div class="rounded-2xl bg-emerald-50 p-4 dark:bg-emerald-950/30"><h3 class="mt-0">Neurohormonal and myocardial protection</h3><p>Approved beta-blockers, MRAs, and SGLT-2 inhibitors.</p></div></div>
+        <h2>Key pharmacology rules</h2><ul><li><strong>ACEI/ARB:</strong> reduce angiotensin-II effects, aldosterone, afterload, and remodeling; monitor renal function and potassium.</li><li><strong>ARNI:</strong> sacubitril/valsartan enhances natriuretic-peptide effects; use a 36-hour washout after an ACEI.</li><li><strong>Beta-blockers:</strong> carvedilol, metoprolol succinate, or bisoprolol; initiate only when stable and euvolemic, starting low and increasing gradually.</li><li><strong>MRA:</strong> spironolactone or eplerenone; monitor potassium and renal function.</li><li><strong>SGLT-2 inhibitor:</strong> dapagliflozin or empagliflozin; the supplied notes include benefit across HFrEF, HFpEF, and HFmrEF regardless of diabetes.</li><li><strong>Diuretics:</strong> relieve congestion but have no proven survival benefit in the supplied notes.</li></ul>
+        <h2>Digoxin and acute inotropes</h2><p>Digoxin increases intracellular calcium and vagal tone. It is used in selected HFrEF patients with rapid atrial fibrillation or persistent symptoms despite optimal therapy. Toxicity may cause gastrointestinal symptoms, confusion, yellow-green halos, and arrhythmias; risk rises with hypokalemia, hypomagnesemia, hypercalcemia, renal impairment, and interacting drugs.</p><p>Dobutamine, dopamine, and milrinone are reserved in the supplied notes for acute refractory heart failure.</p>`;
+
+      const devices = `
+        <h2>Cardiac resynchronization therapy</h2><p>Biventricular pacing is described for selected patients with HFrEF, LVEF 35% or less, sinus rhythm, and a widened QRS—typically LBBB with QRS duration around 130–150 ms or more.</p>
+        <h2>Implantable cardioverter-defibrillator</h2><p>Primary prevention of sudden cardiac death is described for HFrEF with LVEF 35% or less despite at least 3 months of optimal therapy.</p>
+        <h2>HFpEF treatment</h2><ul><li>Aggressive blood-pressure control.</li><li>Empagliflozin or dapagliflozin.</li><li>Judicious diuretic therapy for congestion.</li><li>Treatment of comorbidities, such as rate control in atrial fibrillation.</li></ul>`;
+
+      container.innerHTML = `<div class="mx-auto max-w-4xl space-y-5"><div class="card-shadow rounded-3xl border border-rose-100 bg-white p-6 dark:border-slate-700 dark:bg-slate-900 sm:p-8"><p class="text-xs font-black uppercase tracking-[.22em] text-rose-700 dark:text-rose-300">Source-based reference</p><h2 class="gradient-text mt-2 text-3xl font-black">Heart Failure: diagnosis, phenotype, and treatment logic</h2><p class="mt-3 max-w-2xl leading-7 text-slate-600 dark:text-slate-300">A structured reading view derived only from the supplied Heart Failure study notes. Open a section, then apply it in the guided cases.</p><button onclick="appState.currentCaseId='left-failure';saveState();renderCaseRead()" class="focus-ring mt-5 rounded-2xl bg-rose-700 px-5 py-3 font-black text-white">Start a guided case</button></div>${renderReferenceSection('Definition & Framingham criteria','clipboard-check',definition,true)}${renderReferenceSection('Etiology & compensation','git-branch',causes)}${renderReferenceSection('Left-sided vs right-sided failure','split',clinical)}${renderReferenceSection('Diagnostic evidence','scan-line',diagnostics)}${renderReferenceSection('Precipitating acute decompensation','triangle-alert',precip)}${renderReferenceSection('Chronic therapy & pharmacology','pill',therapy)}${renderReferenceSection('Devices & HFpEF','heart-cog',devices)}<div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100"><strong>Source scope:</strong> This application intentionally follows the supplied notes and does not add external guideline recommendations.</div></div>`;
+      setTimeout(() => lucide.createIcons(), 0);
+    }
+
+    function renderDifferentials() {
+      const container = document.getElementById('differentials-tab');
+      container.innerHTML = `<div class="mx-auto max-w-4xl space-y-5"><div><p class="text-xs font-black uppercase tracking-[.2em] text-rose-700 dark:text-rose-300">Pattern mastery</p><h2 class="mt-1 text-3xl font-black">Heart Failure differential cards</h2><p class="mt-2 text-slate-600 dark:text-slate-300">Reveal the diagnosis, then rate how reliably you recognized the pattern.</p></div><div class="space-y-4">${differentialCards.map(card => renderDiffCard(card)).join('')}</div></div>`;
+    }
+    function renderDiffCard(card) {
+      const mastery = appState.differentialMastery[card.id];
+      return `<article class="card-shadow rounded-2xl border border-rose-100 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"><div class="flex items-start justify-between gap-3"><div><p class="text-xs font-black uppercase tracking-[.16em] text-slate-500">Clinical pattern</p><h3 class="mt-2 text-lg font-black">${escapeHTML(card.front)}</h3></div>${mastery ? `<span class="rounded-full bg-rose-100 px-3 py-1 text-xs font-black text-rose-700 dark:bg-rose-950 dark:text-rose-300">${escapeHTML(mastery.rating)}</span>` : ''}</div><details class="mt-4 rounded-2xl bg-rose-50/60 p-4 dark:bg-slate-800"><summary class="cursor-pointer font-black text-rose-700 dark:text-rose-300">Reveal diagnosis</summary><div class="mt-4 space-y-3"><p class="text-xl font-black">→ ${escapeHTML(card.diagnosis)}</p><div><p class="text-xs font-black uppercase tracking-[.14em] text-slate-500">Key features</p><div class="mt-2 flex flex-wrap gap-2">${card.keys.map(x => `<span class="rounded-full bg-white px-3 py-1 text-xs font-bold dark:bg-slate-900">${escapeHTML(x)}</span>`).join('')}</div></div><p class="text-sm"><strong>Closest mimic:</strong> ${escapeHTML(card.mimic)}</p><p class="rounded-xl bg-emerald-50 p-3 text-sm dark:bg-emerald-950/30"><strong>Clinical pearl:</strong> ${escapeHTML(card.pearl)}</p><div class="grid gap-2 sm:grid-cols-3"><button onclick="rateCard('${card.id}','Not ready')" class="focus-ring rounded-xl border-2 border-rose-300 px-3 py-2.5 font-bold text-rose-700 dark:border-rose-800 dark:text-rose-300">Not ready</button><button onclick="rateCard('${card.id}','Ready')" class="focus-ring rounded-xl border-2 border-amber-300 px-3 py-2.5 font-bold text-amber-700 dark:border-amber-800 dark:text-amber-300">Ready</button><button onclick="rateCard('${card.id}','Mastered')" class="focus-ring rounded-xl bg-emerald-600 px-3 py-2.5 font-bold text-white">Mastered</button></div></div></details></article>`;
+    }
+    function rateCard(id, rating) {
+      const intervals = {'Not ready':1, 'Ready':7, 'Mastered':60};
+      appState.differentialMastery[id] = {rating, date:todayISO()};
+      appState.srsSchedule[id] = {due:addDays(todayISO(), intervals[rating]), interval:intervals[rating]};
+      appState.xp += rating === 'Mastered' ? 6 : 3;
+      saveState(); updateMetrics(); showToast(`${rating} — next review scheduled`, 'success'); renderDifferentials();
+    }
+
+    function renderEvidence() {
+      const container = document.getElementById('evidence-tab');
+      container.innerHTML = `<div class="mx-auto max-w-4xl space-y-5"><div><p class="text-xs font-black uppercase tracking-[.2em] text-rose-700 dark:text-rose-300">Evidence appraisal</p><h2 class="mt-1 text-3xl font-black">Which finding changes your confidence?</h2><p class="mt-2 text-slate-600 dark:text-slate-300">Choose before reading the explanation.</p></div>${evidenceQuestions.map((q,qi) => { const ans = appState.quizAnswers[q.id]; return `<article class="card-shadow rounded-2xl border border-rose-100 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"><div class="flex gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rose-100 font-black text-rose-700 dark:bg-rose-950 dark:text-rose-300">${qi+1}</span><h3 class="text-lg font-black leading-7">${escapeHTML(q.stem)}</h3></div><div class="mt-4 space-y-2">${q.options.map((o,i) => `<button ${ans !== undefined ? 'disabled' : ''} onclick="answerEvidence('${q.id}',${i})" class="focus-ring w-full rounded-xl border-2 ${ans !== undefined && i === q.correct ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : ans === i && i !== q.correct ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/30' : 'border-rose-100 dark:border-slate-700'} p-3 text-left font-semibold"><span class="mr-2 text-slate-400">${String.fromCharCode(65+i)}.</span>${escapeHTML(o)}</button>`).join('')}</div>${ans !== undefined ? `<div class="slide-up mt-4 rounded-xl bg-rose-50 p-4 text-sm leading-6 dark:bg-rose-950/30"><p class="font-black">Evidence explanation</p><p class="mt-1">${escapeHTML(q.explanation)}</p></div>` : ''}</article>`; }).join('')}</div>`;
+    }
+    function answerEvidence(id, index) { const q = evidenceQuestions.find(x => x.id === id); appState.quizAnswers[id] = index; if (index === q.correct) { appState.xp += 7; showToast('Correct evidence weighting +7 XP', 'success'); } else showToast('Review the discriminator', 'info'); saveState(); updateMetrics(); renderEvidence(); }
+
+    function renderReviews() {
+      const container = document.getElementById('reviews-tab');
+      const due = differentialCards.filter(c => !appState.srsSchedule[c.id] || appState.srsSchedule[c.id].due <= todayISO());
+      container.innerHTML = `<div class="mx-auto max-w-4xl space-y-5"><div class="card-shadow rounded-3xl bg-gradient-to-br from-slate-950 via-red-950 to-rose-900 p-6 text-white"><p class="text-xs font-black uppercase tracking-[.2em] text-rose-200">SM-2 Lite queue</p><h2 class="mt-2 text-3xl font-black">${due.length} review${due.length === 1 ? '' : 's'} due today</h2><p class="mt-2 text-sm text-rose-100">Rate each pattern to schedule its next appearance.</p></div>${due.length ? due.map(card => `<article class="card-shadow rounded-2xl border border-rose-100 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"><p class="text-xs font-black uppercase tracking-[.16em] text-slate-500">Recall prompt</p><h3 class="mt-2 text-xl font-black">${escapeHTML(card.front)}</h3><details class="mt-4 rounded-xl bg-rose-50/60 p-4 dark:bg-slate-800"><summary class="cursor-pointer font-black text-rose-700 dark:text-rose-300">Show answer</summary><p class="mt-3 text-lg font-black">${escapeHTML(card.diagnosis)}</p><p class="mt-2 text-sm">${escapeHTML(card.pearl)}</p></details><div class="mt-4 grid grid-cols-3 gap-2"><button onclick="reviewRate('${card.id}',1)" class="focus-ring rounded-xl border border-rose-300 px-2 py-2 text-sm font-bold text-rose-700 dark:border-rose-800 dark:text-rose-300">Too hard</button><button onclick="reviewRate('${card.id}',7)" class="focus-ring rounded-xl border border-amber-300 px-2 py-2 text-sm font-bold text-amber-700 dark:border-amber-800 dark:text-amber-300">Fair</button><button onclick="reviewRate('${card.id}',30)" class="focus-ring rounded-xl bg-emerald-600 px-2 py-2 text-sm font-bold text-white">Easy</button></div></article>`).join('') : `<div class="card-shadow rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center dark:border-emerald-800 dark:bg-emerald-950/30"><div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-600 text-white">${icon('check-check','h-7 w-7')}</div><h3 class="mt-4 text-2xl font-black">Review queue complete</h3><p class="mt-2 text-slate-600 dark:text-slate-300">Your scheduled patterns will return on their due dates.</p></div>`}</div>`;
+    }
+    function reviewRate(id, days) { appState.srsSchedule[id] = {due:addDays(todayISO(), days), interval:days}; appState.xp += 4; saveState(); updateMetrics(); showToast(`Next review in ${days} day${days === 1 ? '' : 's'}`, 'success'); renderReviews(); }
+
+    function renderQuiz() {
+      const container = document.getElementById('quiz-tab');
+      const answered = quizQuestions.filter(q => appState.quizAnswers[q.id] !== undefined).length;
+      const correct = quizQuestions.filter(q => appState.quizAnswers[q.id] === q.correct).length;
+      container.innerHTML = `<div class="mx-auto max-w-4xl space-y-5"><div class="card-shadow rounded-3xl border border-rose-100 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"><div class="flex flex-wrap items-end justify-between gap-4"><div><p class="text-xs font-black uppercase tracking-[.2em] text-rose-700 dark:text-rose-300">Cumulative quiz</p><h2 class="mt-1 text-3xl font-black">Apply the full Heart Failure chapter</h2><p class="mt-2 text-slate-600 dark:text-slate-300">${answered} of ${quizQuestions.length} answered • ${correct} correct</p></div><button onclick="resetQuiz()" class="focus-ring rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-black dark:border-slate-600">Reset quiz</button></div><div class="mt-4 h-2 overflow-hidden rounded-full bg-rose-50 dark:bg-slate-800"><div class="h-full bg-gradient-to-r from-rose-500 to-red-700" style="width:${answered/quizQuestions.length*100}%"></div></div></div>${quizQuestions.map((q,qi) => { const ans = appState.quizAnswers[q.id]; return `<article class="card-shadow rounded-2xl border border-rose-100 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"><p class="text-xs font-black uppercase tracking-[.16em] text-slate-500">Question ${qi+1}</p><h3 class="mt-2 text-lg font-black leading-7">${escapeHTML(q.stem)}</h3><div class="mt-4 space-y-2">${q.options.map((o,i) => `<button ${ans !== undefined ? 'disabled' : ''} onclick="answerQuiz('${q.id}',${i})" class="focus-ring w-full rounded-xl border-2 ${ans !== undefined && i === q.correct ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : ans === i && i !== q.correct ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/30' : 'border-rose-100 dark:border-slate-700'} p-3 text-left font-semibold"><span class="mr-2 text-slate-400">${String.fromCharCode(65+i)}.</span>${escapeHTML(o)}</button>`).join('')}</div>${ans !== undefined ? `<div class="mt-4 rounded-xl bg-slate-50 p-4 text-sm leading-6 dark:bg-slate-800"><p class="font-black">${ans === q.correct ? 'Correct reasoning' : 'Review point'}</p><p class="mt-1">${escapeHTML(q.explanation)}</p></div>` : ''}</article>`; }).join('')}</div>`;
+    }
+    function answerQuiz(id, index) { const q = quizQuestions.find(x => x.id === id); appState.quizAnswers[id] = index; if (index === q.correct) { appState.xp += 5; showToast('Correct +5 XP', 'success'); } else showToast('Explanation unlocked', 'info'); saveState(); updateMetrics(); renderQuiz(); }
+    function resetQuiz() { [...evidenceQuestions, ...quizQuestions].forEach(q => delete appState.quizAnswers[q.id]); saveState(); renderQuiz(); showToast('Quiz reset'); }
+
+    function populateVoices() {
+      const select = document.getElementById('voiceSelect');
+      const voices = speechSynthesis.getVoices();
+      select.innerHTML = '<option value="auto">Automatic</option>' + voices.map((v,i) => `<option value="${i}">${escapeHTML(v.name)} — ${escapeHTML(v.lang)}</option>`).join('');
+    }
+    function readCurrentView() {
+      if (!('speechSynthesis' in window)) { showToast('Speech synthesis is not supported in this browser', 'error'); return; }
+      if (speechSynthesis.speaking) { speechSynthesis.cancel(); document.getElementById('playButton').innerHTML = icon('play'); lucide.createIcons(); return; }
+      const section = document.getElementById(`${appState.activeTab}-tab`);
+      const text = section.innerText.replace(/\s+/g,' ').trim();
+      if (!text) return;
+      const utter = new SpeechSynthesisUtterance(text.slice(0,12000));
+      utter.rate = Number(document.getElementById('speechSpeed').value);
+      const val = document.getElementById('voiceSelect').value;
+      const voices = speechSynthesis.getVoices();
+      if (val !== 'auto' && voices[Number(val)]) utter.voice = voices[Number(val)];
+      utter.onend = () => { document.getElementById('playButton').innerHTML = icon('play'); lucide.createIcons(); };
+      document.getElementById('playButton').innerHTML = icon('square');
+      lucide.createIcons();
+      speechSynthesis.speak(utter);
+    }
+
+    document.querySelectorAll('.tab-button').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+    document.getElementById('fontIncrease').addEventListener('click', () => { appState.fontSize = Math.min(22, appState.fontSize + 1); document.documentElement.style.setProperty('--base-font-size', `${appState.fontSize}px`); saveState(); });
+    document.getElementById('fontDecrease').addEventListener('click', () => { appState.fontSize = Math.max(14, appState.fontSize - 1); document.documentElement.style.setProperty('--base-font-size', `${appState.fontSize}px`); saveState(); });
+    document.getElementById('darkModeToggle').addEventListener('click', () => { appState.darkMode = !appState.darkMode; document.documentElement.classList.toggle('dark', appState.darkMode); saveState(); });
+    document.getElementById('settingsButton').addEventListener('click', () => { const panel = document.getElementById('settingsPanel'); panel.classList.toggle('hidden'); document.getElementById('settingsButton').setAttribute('aria-expanded', String(!panel.classList.contains('hidden'))); });
+    document.getElementById('speechSpeed').addEventListener('input', e => document.getElementById('speedValue').textContent = `${Number(e.target.value).toFixed(1)}×`);
+    document.getElementById('evidenceToggle').addEventListener('change', e => { appState.evidenceDetail = e.target.checked; saveState(); document.querySelectorAll('.finding').forEach(x => x.classList.toggle('opacity-60', !e.target.checked)); });
+    document.getElementById('playButton').addEventListener('click', readCurrentView);
+    document.getElementById('helpButton').addEventListener('click', () => { document.getElementById('helpModal').classList.remove('hidden'); document.getElementById('helpModal').classList.add('flex'); document.querySelector('#helpModal [tabindex="-1"]').focus(); });
+    function closeHelp() { document.getElementById('helpModal').classList.add('hidden'); document.getElementById('helpModal').classList.remove('flex'); document.getElementById('helpButton').focus(); }
+    document.getElementById('closeHelp').addEventListener('click', closeHelp);
+    document.getElementById('helpModal').addEventListener('click', e => { if (e.target.id === 'helpModal') closeHelp(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('helpModal').classList.contains('hidden')) closeHelp(); });
+    window.addEventListener('beforeunload', () => { if ('speechSynthesis' in window) speechSynthesis.cancel(); });
+    if ('speechSynthesis' in window) { populateVoices(); speechSynthesis.onvoiceschanged = populateVoices; }
+
+    updateVisit();
+    document.documentElement.style.setProperty('--base-font-size', `${appState.fontSize}px`);
+    document.documentElement.classList.toggle('dark', appState.darkMode);
+    document.getElementById('evidenceToggle').checked = appState.evidenceDetail;
+    updateMetrics();
+    switchTab(appState.activeTab || 'cases');
+    lucide.createIcons();
+  </script>
+</body>
+</html>

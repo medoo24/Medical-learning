@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>Cardiovascular Clinical Reasoning</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
+  <style>
+    :root { --base-font-size: 16px; --safe-top: env(safe-area-inset-top, 0px); }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-size: var(--base-font-size);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      overflow-x: hidden;
+    }
+    button, select, input, textarea { font: inherit; }
+    button, [role="button"] { min-height: 44px; touch-action: manipulation; }
+    .min-h-dvh { min-height: 100dvh; }
+    .safe-header { padding-top: var(--safe-top); }
+    .tab-strip { scrollbar-width: none; scroll-snap-type: x proximity; }
+    .tab-strip::-webkit-scrollbar { display: none; }
+    .tab-button { scroll-snap-align: center; }
+    .focus-ring:focus-visible { outline: 3px solid #38bdf8; outline-offset: 3px; }
+    .card-shadow { box-shadow: 0 10px 30px rgba(15,23,42,.07); }
+    .soft-grid {
+      background-image: radial-gradient(circle at 1px 1px, rgba(14,116,144,.12) 1px, transparent 0);
+      background-size: 22px 22px;
+    }
+    .gradient-text {
+      background: linear-gradient(90deg,#0f766e,#0369a1,#4f46e5);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .finding {
+      border-left: 4px solid #38bdf8;
+      background: rgba(14,165,233,.07);
+      transition: transform .16s ease, background .16s ease;
+    }
+    .finding:hover { transform: translateX(2px); background: rgba(14,165,233,.12); }
+    .answer-btn[data-state="correct"] { border-color: #16a34a !important; background: rgba(34,197,94,.12) !important; }
+    .answer-btn[data-state="wrong"] { border-color: #dc2626 !important; background: rgba(239,68,68,.10) !important; }
+    .pulse-dot { animation: pulseDot 2s infinite; }
+    @keyframes pulseDot { 0%,100%{opacity:.45;transform:scale(.85)} 50%{opacity:1;transform:scale(1.1)} }
+    .slide-up { animation: slideUp .22s ease-out; }
+    @keyframes slideUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .toast { animation: toastIn .2s ease-out; }
+    @keyframes toastIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .modal-backdrop { background: rgba(2,6,23,.68); backdrop-filter: blur(4px); }
+    .prose-med h2 { margin-top: 1.5rem; font-size: 1.35rem; font-weight: 800; }
+    .prose-med h3 { margin-top: 1rem; font-size: 1.08rem; font-weight: 750; }
+    .prose-med p, .prose-med li { line-height: 1.72; }
+    .prose-med ul { padding-left: 1.25rem; list-style: disc; }
+    .prose-med ol { padding-left: 1.25rem; list-style: decimal; }
+    .dark body { background: #020617; color: #e2e8f0; }
+    .dark .soft-grid { background-image: radial-gradient(circle at 1px 1px, rgba(56,189,248,.13) 1px, transparent 0); }
+    .dark .finding { background: rgba(14,165,233,.10); }
+    @media (max-width: 420px) {
+      .mobile-hide { display:none !important; }
+      .compact-title { max-width: 145px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+    @media print {
+      header, nav, .no-print, #toastContainer { display:none !important; }
+      body { background:white !important; color:black !important; }
+      main { max-width:none !important; padding:0 !important; }
+    }
+  </style>
+</head>
+<body class="transition-colors">
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-sky-700 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg">Skip to main content</a>
+
+  <header class="safe-header sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
+    <div class="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2 px-3 py-2.5 sm:px-5">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2">
+          <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-teal-600 to-sky-700 text-white shadow-sm" aria-hidden="true">
+            <i data-lucide="heart-pulse" class="h-5 w-5"></i>
+          </div>
+          <div class="min-w-0 compact-title">
+            <h1 class="truncate text-base font-black tracking-tight sm:text-lg">Cardiovascular Reasoning</h1>
+            <p class="truncate text-xs text-slate-500 dark:text-slate-400">Physiology • Symptoms • Differential diagnosis</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1">
+        <div class="mobile-hide mr-1 hidden items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200 sm:flex" aria-label="Learning metrics">
+          <span title="Study streak">📊 <span id="streakDisplay">0</span></span>
+          <span class="text-slate-300 dark:text-slate-600">|</span>
+          <span title="Experience points">⭐ <span id="xpDisplay">0</span></span>
+        </div>
+        <button id="fontDecrease" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" title="Decrease font size" aria-label="Decrease font size">A−</button>
+        <button id="fontIncrease" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" title="Increase font size" aria-label="Increase font size">A+</button>
+        <button id="playButton" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" title="Read current view aloud" aria-label="Read current view aloud"><i data-lucide="play" class="h-5 w-5"></i></button>
+        <button id="settingsButton" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" title="Narration controls" aria-label="Open narration controls" aria-expanded="false"><i data-lucide="settings-2" class="h-5 w-5"></i></button>
+        <button id="darkModeToggle" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" title="Toggle dark mode" aria-label="Toggle dark mode"><i data-lucide="moon" class="h-5 w-5"></i></button>
+        <button id="helpButton" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" title="Help" aria-label="Open help"><i data-lucide="circle-help" class="h-5 w-5"></i></button>
+      </div>
+    </div>
+
+    <div id="settingsPanel" class="hidden border-t border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
+      <div class="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-4 px-4 py-3 text-sm">
+        <label class="flex items-center gap-2 font-semibold">Voice
+          <select id="voiceSelect" class="focus-ring min-h-11 rounded-lg border border-slate-300 bg-white px-3 dark:border-slate-600 dark:bg-slate-900">
+            <option value="auto">Automatic</option>
+          </select>
+        </label>
+        <label class="flex items-center gap-2 font-semibold">Speed
+          <input id="speechSpeed" type="range" min="0.6" max="1.8" step="0.1" value="1" class="w-32" aria-label="Speech speed">
+          <span id="speedValue" class="w-10 text-right">1.0×</span>
+        </label>
+        <label class="flex min-h-11 items-center gap-2 font-semibold">
+          <input id="evidenceToggle" type="checkbox" checked class="h-5 w-5 rounded"> Show detailed findings
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <nav class="sticky top-[65px] z-40 border-b border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900" aria-label="Learning sections">
+    <div id="tabStrip" class="tab-strip mx-auto flex w-full max-w-5xl overflow-x-auto px-2" role="tablist" aria-label="Application sections">
+      <button class="tab-button focus-ring shrink-0 border-b-2 border-sky-600 px-4 py-3 text-sm font-bold text-sky-700 dark:text-sky-300" data-tab="cases" role="tab" aria-selected="true">Cases</button>
+      <button class="tab-button focus-ring shrink-0 border-b-2 border-transparent px-4 py-3 text-sm font-bold text-slate-500" data-tab="read" role="tab" aria-selected="false">Read</button>
+      <button class="tab-button focus-ring shrink-0 border-b-2 border-transparent px-4 py-3 text-sm font-bold text-slate-500" data-tab="differentials" role="tab" aria-selected="false">Differentials</button>
+      <button class="tab-button focus-ring shrink-0 border-b-2 border-transparent px-4 py-3 text-sm font-bold text-slate-500" data-tab="evidence" role="tab" aria-selected="false">Evidence</button>
+      <button class="tab-button focus-ring shrink-0 border-b-2 border-transparent px-4 py-3 text-sm font-bold text-slate-500" data-tab="reviews" role="tab" aria-selected="false">Case Reviews</button>
+      <button class="tab-button focus-ring shrink-0 border-b-2 border-transparent px-4 py-3 text-sm font-bold text-slate-500" data-tab="quiz" role="tab" aria-selected="false">Quiz</button>
+    </div>
+  </nav>
+
+  <main id="main-content" class="min-h-dvh soft-grid mx-auto w-full max-w-5xl px-3 py-5 sm:px-5 sm:py-7">
+    <section id="cases-tab" class="tab-content" role="tabpanel"></section>
+    <section id="read-tab" class="tab-content hidden" role="tabpanel"></section>
+    <section id="differentials-tab" class="tab-content hidden" role="tabpanel"></section>
+    <section id="evidence-tab" class="tab-content hidden" role="tabpanel"></section>
+    <section id="reviews-tab" class="tab-content hidden" role="tabpanel"></section>
+    <section id="quiz-tab" class="tab-content hidden" role="tabpanel"></section>
+  </main>
+
+  <div id="toastContainer" class="pointer-events-none fixed bottom-4 right-4 z-[80] flex max-w-[calc(100vw-2rem)] flex-col gap-2" aria-live="polite"></div>
+
+  <div id="helpModal" class="modal-backdrop fixed inset-0 z-[90] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900" tabindex="-1">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-xs font-black uppercase tracking-[.2em] text-sky-600">Learning guide</p>
+          <h2 id="helpTitle" class="mt-1 text-2xl font-black">Think before you reveal</h2>
+        </div>
+        <button id="closeHelp" class="focus-ring grid h-11 w-11 place-items-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Close help"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+      <div class="mt-5 space-y-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
+        <p>Each case moves from recognition to reasoning, contrast, and teach-back. Make an attempt before opening the explanation.</p>
+        <div class="rounded-xl bg-sky-50 p-4 dark:bg-sky-950/50">
+          <p class="font-black text-sky-900 dark:text-sky-100">Useful diagnostic habit</p>
+          <p class="mt-1">Name the syndrome, identify the strongest supporting finding, then state the closest mimic and the feature that argues against it.</p>
+        </div>
+        <div>
+          <p class="font-black">Keyboard</p>
+          <ul class="mt-1 list-disc pl-5">
+            <li><kbd class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">Tab</kbd> moves through controls.</li>
+            <li><kbd class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">Enter</kbd> activates the focused control.</li>
+            <li><kbd class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">Esc</kbd> closes this window.</li>
+          </ul>
+        </div>
+        <p class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">Educational content is based only on the supplied cardiovascular study notes and is not a substitute for clinical care.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'cardioReasoningStateV1';
+    const todayISO = () => new Date().toISOString().slice(0,10);
+    const addDays = (date, days) => { const d = new Date(date); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); };
+
+    const defaultState = {
+      activeTab: 'cases', fontSize: 16, darkMode: false, xp: 0, streak: 0,
+      lastVisit: todayISO(), currentCaseId: 'dyspnea', currentStep: 0,
+      caseProgress: {}, differentialMastery: {}, srsSchedule: {}, quizAnswers: {},
+      misconceptionHistory: [], evidenceDetail: true
+    };
+    let appState = {...defaultState};
+    try { appState = {...defaultState, ...(JSON.parse(localStorage.getItem(STORAGE_KEY)) || {})}; } catch(e) {}
+
+    const cases = [
+      {
+        id:'dyspnea', icon:'wind', title:'The Breathless Patient', subtitle:'Cardiac dyspnea vs bronchial asthma', minutes:8,
+        scenario:{
+          patient:'A 62-year-old man with hypertension and known ischemic heart disease',
+          complaint:'Progressive shortness of breath, worse when lying flat; he now sleeps on four pillows and woke two hours after sleep gasping for air.',
+          vitals:['HR 106/min','RR 25/min','O₂ saturation 91% on room air'],
+          findings:['Bilateral basal moist crepitations','S₃ gallop','Elevated jugular venous pressure','Bilateral ankle edema','Intermittent wheeze']
+        },
+        question:'Which diagnosis best unifies the presentation?',
+        options:[
+          {id:'bronchial', text:'Primary bronchial asthma'},
+          {id:'cardiac', text:'Cardiac dyspnea from left-sided heart failure'},
+          {id:'psychogenic', text:'Psychogenic hyperventilation'},
+          {id:'syncope', text:'Vasovagal syndrome'}
+        ], correct:'cardiac',
+        learnerVoices:[
+          'The wheeze makes me think asthma, but orthopnea and the S₃ do not fit primary airway disease.',
+          'I initially anchored on asthma. Wait—the raised JVP and edema suggest congestion.'
+        ],
+        feedbackCorrect:'Exactly. Orthopnea, paroxysmal nocturnal dyspnea, basal crepitations, an S₃ gallop, elevated JVP, and edema form a congestion pattern. Wheeze can occur in “cardiac asthma” because bronchial venous congestion causes mucosal edema and reflex bronchospasm.',
+        feedbackWrong:'Your attention to the respiratory symptoms is useful, but the strongest clues are outside the airways: orthopnea, an S₃ gallop, elevated JVP, and dependent edema. Which single process could connect all four?',
+        hint:'Look for evidence of pulmonary venous congestion plus systemic volume overload.',
+        patternTitle:'Congestion pattern',
+        pattern:['Left-sided failure raises pulmonary venous pressure.','Interstitial pulmonary edema decreases lung compliance and increases the work of breathing.','Bronchial edema may add wheeze and cough.','Recumbency increases central venous return, explaining orthopnea and PND.'],
+        contrast:{
+          prompt:'A 24-year-old with childhood atopy has episodic expiratory wheeze, prolonged expiration, thick mucoid sputum, no JVP elevation, and no edema. Which diagnosis fits better?',
+          options:['Cardiac asthma','Bronchial asthma'], correct:1,
+          explanation:'Bronchial asthma is favored by young onset, atopy, generalized expiratory wheeze, prolonged expiration, and a normal cardiac examination. Cardiac asthma is favored by older age and circulatory signs such as cardiomegaly, elevated JVP, murmurs, an S₃, and basal crepitations.'
+        },
+        teachBack:'In 2–3 sentences, explain why wheeze does not automatically mean primary bronchial asthma in this patient.',
+        summary:'Cardiac dyspnea is produced by pulmonary congestion, reduced compliance, airway edema, reflex rapid breathing, and—when output is low—respiratory muscle fatigue.'
+      },
+      {
+        id:'edema', icon:'footprints', title:'The Swollen Patient', subtitle:'Cardiac edema and ascites precox', minutes:7,
+        scenario:{
+          patient:'A 67-year-old woman with progressive right-sided heart failure',
+          complaint:'Bilateral ankle swelling that worsens by evening and leaves an indentation after pressure.',
+          vitals:['HR 92/min','BP 118/74 mmHg','No fever'],
+          findings:['Bilateral symmetrical ankle edema','Pitting and non-tender','Elevated systemic venous pressure','Reduced renal perfusion','Hepatic congestion']
+        },
+        question:'Which mechanism is the primary initiating force behind this edema?',
+        options:[
+          {id:'hydro',text:'Increased capillary hydrostatic pressure from systemic venous congestion'},
+          {id:'allergy',text:'Acute allergic increase in capillary permeability'},
+          {id:'local',text:'Localized venous obstruction in one leg'},
+          {id:'lymph',text:'Primary lymphatic obstruction'}
+        ], correct:'hydro',
+        learnerVoices:[
+          'It is pitting, so maybe low albumin? But the venous congestion seems to come first.',
+          'The bilateral dependent pattern makes a local clot less likely.'
+        ],
+        feedbackCorrect:'You caught the central mechanism. Right ventricular and systemic venous congestion raise capillary hydrostatic pressure. Low output then promotes renal salt and water retention through reduced GFR, RAAS activation, and ADH release.',
+        feedbackWrong:'That mechanism can cause edema, but the distribution matters. Bilateral, symmetrical, dependent, pitting edema in right-sided failure points first to raised systemic venous and capillary hydrostatic pressure.',
+        hint:'Start with the backward effect of right ventricular failure on the systemic veins.',
+        patternTitle:'Cardiac edema chain',
+        pattern:['Systemic venous congestion raises capillary hydrostatic pressure.','Renal hypoperfusion reduces GFR and activates RAAS.','ADH promotes free-water retention.','Hepatic congestion may reduce hormone destruction and albumin synthesis.'],
+        contrast:{
+          prompt:'A patient develops ascites before substantial leg edema. Which source-based explanation is most characteristic?',
+          options:['Ascites precox from marked hepatic venous congestion','Typical uncomplicated dependent edema','Isolated bronchial asthma'], correct:0,
+          explanation:'Ascites precox means ascites appears before, or out of proportion to, lower-limb edema. The supplied notes associate it with constrictive pericarditis/pericardial effusion and severe tricuspid stenosis or regurgitation because of pronounced hepatic venous congestion.'
+        },
+        teachBack:'Build the sequence from right-sided failure to pitting ankle edema using hydrostatic pressure, the kidney, RAAS, and ADH.',
+        summary:'Cardiac edema is typically dependent, bilateral, symmetrical, pitting, and painless. Lower-limb edema usually precedes ascites except in ascites precox.'
+      },
+      {
+        id:'syncope', icon:'activity', title:'Transient Loss of Consciousness', subtitle:'Classifying syncope by trigger and mechanism', minutes:8,
+        scenario:{
+          patient:'A 74-year-old man taking a diuretic',
+          complaint:'Brief loss of consciousness immediately after standing; he recovered completely within a minute.',
+          vitals:['Supine BP 138/82','Standing BP 112/68 at 2 minutes','No persistent neurologic deficit'],
+          findings:['Rapid onset','Short duration','Spontaneous complete recovery','Systolic pressure falls by 26 mmHg','Diastolic pressure falls by 14 mmHg']
+        },
+        question:'What is the most likely category of syncope?',
+        options:[
+          {id:'orthostatic',text:'Postural (orthostatic) syncope'},
+          {id:'vasovagal',text:'Vasovagal syncope'},
+          {id:'cardiac',text:'Mechanical cardiac syncope'},
+          {id:'cough',text:'Cough syncope'}
+        ], correct:'orthostatic',
+        learnerVoices:[
+          'The complete recovery sounds like syncope rather than a persistent neurologic event.',
+          'The timing after standing plus the blood-pressure fall makes this orthostatic.'
+        ],
+        feedbackCorrect:'Correct. The blood pressure falls by more than 20 mmHg systolic and more than 10 mmHg diastolic within three minutes of standing, matching the definition in the source notes. Diuretics and volume depletion are listed causes.',
+        feedbackWrong:'You recognized transient cerebral hypoperfusion, but the trigger and measured pressure change classify it. Compare the standing BP with the supine BP within the first three minutes.',
+        hint:'Calculate the systolic and diastolic drops after standing.',
+        patternTitle:'Syncope classification anchors',
+        pattern:['Vasovagal: emotion, pain, fear, or prolonged standing with vasodilation and bradycardia.','Carotid sinus: mechanical stimulation such as a tight collar or shaving.','Cardiac: exertional obstruction or sudden brady-/tachyarrhythmia.','Situational: coughing, urination, or defecation.'],
+        contrast:{
+          prompt:'A patient faints during exertion and has severe aortic stenosis. Which category is most concerning?',
+          options:['Vasovagal','Cardiac mechanical obstruction','Micturition syncope'], correct:1,
+          explanation:'Exertional syncope in severe aortic stenosis is cardiac syncope because fixed outflow obstruction prevents cardiac output from rising to meet demand.'
+        },
+        teachBack:'State the formal orthostatic blood-pressure criterion and give two source-listed causes.',
+        summary:'Syncope is transient loss of consciousness from acute global cerebral hypoperfusion, with rapid onset, short duration, and spontaneous complete recovery.'
+      },
+      {
+        id:'hemoptysis', icon:'droplets', title:'Blood in the Sputum', subtitle:'Cardiovascular patterns of hemoptysis', minutes:6,
+        scenario:{
+          patient:'A 56-year-old patient with sudden dyspnea and pleuritic chest pain',
+          complaint:'Dark blood-streaked sputum that began with the chest pain.',
+          vitals:['RR 28/min','HR 112/min','O₂ saturation 90%'],
+          findings:['Sudden onset','Pleuritic pain','Dyspnea','Dark frank or streaked blood']
+        },
+        question:'Which cardiovascular cause best matches this pattern?',
+        options:[
+          {id:'edema',text:'Acute pulmonary edema'},
+          {id:'mitral',text:'Mitral stenosis with pulmonary apoplexy'},
+          {id:'infarct',text:'Pulmonary infarction secondary to pulmonary embolism'},
+          {id:'aorta',text:'Ruptured aortic aneurysm into the airway'}
+        ], correct:'infarct',
+        learnerVoices:[
+          'Pink frothy sputum would suggest pulmonary edema, but this is dark and pleuritic.',
+          'The sudden pleuritic pain and dyspnea make pulmonary infarction fit.'
+        ],
+        feedbackCorrect:'Exactly. Pulmonary infarction secondary to pulmonary embolism is described as dark frank blood or blood-streaked sputum accompanied by pleuritic chest pain and dyspnea.',
+        feedbackWrong:'The color and companion symptoms are the discriminators. Pink frothy sputum points toward acute pulmonary edema; sudden bright-red profuse bleeding suggests pulmonary apoplexy in mitral stenosis.',
+        hint:'Pair the sputum description with pleuritic pain and sudden dyspnea.',
+        patternTitle:'Hemoptysis pattern map',
+        pattern:['Pulmonary edema: frothy, pinkish, or blood-tinged sputum.','Mitral stenosis: profuse, sudden bright-red hemorrhage from high-pressure bronchial veins.','Pulmonary infarction: dark frank or streaked blood with pleuritic pain and dyspnea.','Aortic aneurysm rupture into the tracheobronchial tree: catastrophic hemoptysis.'],
+        contrast:{
+          prompt:'Which presentation most strongly suggests acute pulmonary edema?',
+          options:['Frothy pink sputum with congestion','Dark blood with pleuritic pain','Catastrophic airway hemorrhage'], correct:0,
+          explanation:'The source notes characterize acute pulmonary edema by frothy, pinkish, or blood-tinged sputum.'
+        },
+        teachBack:'Differentiate pulmonary edema, mitral stenosis pulmonary apoplexy, and pulmonary infarction using sputum appearance and associated symptoms.',
+        summary:'Cardiac hemoptysis reflects elevated pulmonary venous/capillary pressure or pulmonary vascular occlusion. The appearance of blood and accompanying symptoms narrow the cause.'
+      },
+      {
+        id:'chestpain', icon:'heart-crack', title:'Cardiovascular Chest Pain', subtitle:'Ischemic, pericardial, aortic, pulmonary, or psychogenic', minutes:9,
+        scenario:{
+          patient:'A 59-year-old man with abrupt severe chest pain',
+          complaint:'Pain was maximal at onset, feels tearing, and radiates directly to the interscapular back.',
+          vitals:['BP 182/104 mmHg','HR 108/min','Marked distress'],
+          findings:['Sudden onset','Tearing or ripping quality','Interscapular radiation','Maximum intensity at onset']
+        },
+        question:'Which cardiovascular pain pattern is most likely?',
+        options:[
+          {id:'ischemic',text:'Myocardial ischemic pain'},
+          {id:'pericardial',text:'Acute pericarditis'},
+          {id:'aortic',text:'Aortic dissection'},
+          {id:'neurosis',text:'Cardiac neurosis (Da Costa syndrome)'}
+        ], correct:'aortic',
+        learnerVoices:[
+          'Any severe chest pain makes me think MI first, but the maximal-at-onset tearing pain to the back is different.',
+          'The interscapular radiation is the key discriminator for aortic pain.'
+        ],
+        feedbackCorrect:'Perfect diagnostic logic. Sudden catastrophic tearing or ripping pain, maximal at onset and radiating to the interscapular back, is the source-described pattern of aortic dissection.',
+        feedbackWrong:'Your choice may cause chest pain, but focus on the temporal profile and radiation. Which diagnosis is classically maximal at onset and radiates directly to the interscapular region?',
+        hint:'Use onset, quality, and direction of radiation rather than severity alone.',
+        patternTitle:'Chest-pain discriminators',
+        pattern:['Ischemic: retrosternal crushing or squeezing pain, sometimes radiating to arm, neck, or jaw.','Pericarditis: sharp pain worse with inspiration, coughing, or lying flat; relieved by sitting forward.','Aortic dissection: tearing pain, maximal at onset, radiating to the interscapular back.','Pulmonary embolism: sudden pleuritic pain with dyspnea, tachypnea, and hemoptysis.','Cardiac neurosis: localized inframammary stabbing pain unrelated to exertion, often with anxiety or hyperventilation.'],
+        contrast:{
+          prompt:'Pain is sharp, worse on deep inspiration and lying flat, and relieved by sitting up and leaning forward. What pattern is this?',
+          options:['Myocardial ischemia','Acute pericarditis','Aortic dissection'], correct:1,
+          explanation:'That positional and pleuritic pattern is characteristic of acute pericarditis in the supplied notes.'
+        },
+        teachBack:'Compare ischemic pain, pericarditis, aortic dissection, pulmonary embolism, and cardiac neurosis in one concise framework.',
+        summary:'Cardiovascular chest pain is differentiated by quality, onset, radiation, provoking/relieving factors, and associated symptoms.'
+      }
+    ];
+
+    const differentialCards = [
+      {id:'d1', front:'Orthopnea + PND + basal crepitations + S₃ + raised JVP', diagnosis:'Cardiac dyspnea from heart failure', keys:['Pulmonary venous congestion','Reduced lung compliance','Systemic volume overload'], mimic:'Bronchial asthma', pearl:'Wheeze can result from bronchial mucosal edema and bronchospasm (“cardiac asthma”).'},
+      {id:'d2', front:'Bilateral, symmetrical, dependent, pitting, painless ankle swelling', diagnosis:'Cardiac edema', keys:['Raised systemic venous pressure','Increased capillary hydrostatic pressure','Salt and water retention'], mimic:'Localized venous disease', pearl:'Asymmetry suggests a localized process such as DVT rather than typical cardiac edema.'},
+      {id:'d3', front:'Loss of consciousness after standing + BP fall >20/10 mmHg within 3 min', diagnosis:'Orthostatic syncope', keys:['Postural trigger','Measured BP drop','Complete recovery'], mimic:'Vasovagal syncope', pearl:'Source-listed causes include autonomic neuropathy, volume depletion, medications, and prolonged bed rest.'},
+      {id:'d4', front:'Dark blood-streaked sputum + sudden pleuritic pain + dyspnea', diagnosis:'Pulmonary infarction', keys:['Pulmonary vascular occlusion','Pleuritic pain','Dark or streaked blood'], mimic:'Acute pulmonary edema', pearl:'Pulmonary edema is more characteristically frothy and pinkish.'},
+      {id:'d5', front:'Tearing chest pain, maximal at onset, radiating to interscapular back', diagnosis:'Aortic dissection pain pattern', keys:['Abrupt onset','Tearing/ripping quality','Posterior radiation'], mimic:'Myocardial ischemia', pearl:'Ischemic pain is usually retrosternal, crushing or squeezing, with arm/neck/jaw radiation.'},
+      {id:'d6', front:'Ascites precedes or is out of proportion to leg edema', diagnosis:'Ascites precox', keys:['Marked hepatic venous congestion','Early hepatic-surface transudation'], mimic:'Typical cardiac edema sequence', pearl:'Associated in the notes with constrictive pericarditis/pericardial effusion and severe TS or TR.'}
+    ];
+
+    const evidenceQuestions = [
+      {id:'e1', stem:'Which cluster most strongly supports cardiac rather than primary bronchial asthma?', options:['Young age, atopy, prolonged expiration','S₃ gallop, elevated JVP, basal crepitations','Thick viscid sputum and family history','Isolated episodic wheeze'], correct:1, explanation:'Circulatory signs—S₃, raised JVP, cardiomegaly or murmurs—plus basal moist crepitations point toward cardiac asthma.'},
+      {id:'e2', stem:'Which process directly lowers plasma oncotic pressure in chronic cardiac failure?', options:['Raised capillary hydrostatic pressure','Reduced albumin from congested liver, malabsorption, or poor intake','Reflex bronchospasm','Increased venous return while supine'], correct:1, explanation:'The notes link hypoalbuminemia to congestive enteropathy, impaired hepatic albumin synthesis, and anorexia.'},
+      {id:'e3', stem:'Which feature makes cardiac mechanical obstruction a stronger syncope diagnosis?', options:['Fear before fainting','A tight collar trigger','Syncope during exertion in severe aortic stenosis','Fainting after urination'], correct:2, explanation:'With fixed valvular or mechanical obstruction, cardiac output cannot rise to meet exertional demand.'},
+      {id:'e4', stem:'Which sputum description matches acute pulmonary edema?', options:['Frothy, pinkish, or blood-tinged','Profuse sudden bright-red bleeding only','Dark blood with pleuritic pain','No blood, only thick mucoid sputum'], correct:0, explanation:'The supplied notes describe acute pulmonary edema with frothy, pinkish, or blood-tinged sputum.'},
+      {id:'e5', stem:'Which pain feature best supports acute pericarditis?', options:['Crushing pain relieved by rest','Tearing pain maximal at onset','Sharp pain worse supine and relieved leaning forward','Localized inframammary pain unrelated to exertion'], correct:2, explanation:'Pericarditis pain is sharp, worsened by inspiration, coughing, or lying flat, and relieved by sitting up and leaning forward.'}
+    ];
+
+    const quizQuestions = [
+      {id:'q1', stem:'Cardiac output equals:', options:['Heart rate × stroke volume','Stroke volume ÷ heart rate','End-diastolic volume × afterload','Heart rate × ejection fraction'], correct:0, explanation:'Cardiac output is the volume pumped by each ventricle per minute: CO = HR × SV.'},
+      {id:'q2', stem:'Which change tends to reduce stroke volume?', options:['Increased preload within physiological limits','Increased contractility','Increased afterload','Frank–Starling recruitment'], correct:2, explanation:'Stroke volume is inversely related to afterload, while preload and contractility increase it within physiological limits.'},
+      {id:'q3', stem:'A patient has stroke volume 70 mL and end-diastolic volume 140 mL. The ejection fraction is:', options:['25%','40%','50%','70%'], correct:2, explanation:'EF = SV ÷ EDV × 100 = 70 ÷ 140 × 100 = 50%.'},
+      {id:'q4', stem:'Which NYHA class describes symptoms with less-than-ordinary activity while comfortable at rest?', options:['Class I','Class II','Class III','Class IV'], correct:2, explanation:'NYHA Class III is marked limitation: comfortable at rest, but less-than-ordinary activity causes symptoms.'},
+      {id:'q5', stem:'Which characteristic is typical of cardiac edema?', options:['Unilateral and tender','Bilateral, symmetrical, pitting, dependent','Non-pitting and localized','Always follows ascites'], correct:1, explanation:'Typical cardiac edema is dependent, bilateral, symmetrical, pitting, and usually painless.'},
+      {id:'q6', stem:'Fainting after nighttime urination in an older man is:', options:['Cough syncope','Micturition syncope','Carotid sinus syndrome','Mechanical cardiac syncope'], correct:1, explanation:'Micturition syncope occurs during or immediately after urination, often at night in older men, from reflex vasodilation after rapid bladder decompression.'},
+      {id:'q7', stem:'Which pain pattern most closely matches cardiac neurosis (Da Costa syndrome)?', options:['Exertional retrosternal squeezing','Sharp positional pain relieved leaning forward','Localized inframammary stabbing pain unrelated to exertion','Tearing pain to the back'], correct:2, explanation:'The notes describe localized, sharp, stabbing inframammary pain unrelated to exertion and associated with anxiety or hyperventilation.'},
+      {id:'q8', stem:'An LVEF of 34% is best classified as:', options:['Normal','Preserved','Reduced with severe systolic dysfunction','Hyperdynamic'], correct:2, explanation:'The supplied notes describe reduced LVEF at 40% or below and severe systolic dysfunction below 35%.'}
+    ];
+
+    function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); }
+    function updateVisit(){
+      if(appState.lastVisit !== todayISO()){
+        const yesterday = addDays(todayISO(), -1);
+        appState.streak = appState.lastVisit === yesterday ? appState.streak + 1 : 1;
+        appState.lastVisit = todayISO(); saveState();
+      }
+    }
+    function escapeHTML(value=''){ return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+    function showToast(message, type='info'){
+      const colors = type==='success' ? 'bg-emerald-600' : type==='error' ? 'bg-rose-600' : 'bg-sky-700';
+      const el = document.createElement('div');
+      el.className = `toast ${colors} rounded-xl px-4 py-3 text-sm font-bold text-white shadow-xl`;
+      el.textContent = message; document.getElementById('toastContainer').appendChild(el);
+      setTimeout(()=>el.remove(), 2800);
+    }
+    function updateMetrics(){
+      document.getElementById('xpDisplay').textContent = appState.xp;
+      document.getElementById('streakDisplay').textContent = appState.streak;
+    }
+    function icon(name, cls='h-5 w-5'){ return `<i data-lucide="${name}" class="${cls}" aria-hidden="true"></i>`; }
+    function progressFor(id){ return appState.caseProgress[id] || {step:0, answered:false, contrastDone:false, teachBack:'', completed:false}; }
+    function completedCount(){ return Object.values(appState.caseProgress).filter(x=>x.completed).length; }
+    function dueReviewCount(){ return differentialCards.filter(c => !appState.srsSchedule[c.id] || appState.srsSchedule[c.id].due <= todayISO()).length; }
+
+    function switchTab(tabName){
+      appState.activeTab = tabName; saveState();
+      document.querySelectorAll('.tab-content').forEach(el=>el.classList.add('hidden'));
+      document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+      document.querySelectorAll('.tab-button').forEach(btn=>{
+        const active = btn.dataset.tab === tabName;
+        btn.setAttribute('aria-selected', String(active));
+        btn.classList.toggle('border-sky-600',active); btn.classList.toggle('text-sky-700',active); btn.classList.toggle('dark:text-sky-300',active);
+        btn.classList.toggle('border-transparent',!active); btn.classList.toggle('text-slate-500',!active);
+        if(active) btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+      });
+      renderActiveTab(); window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function renderActiveTab(){
+      if(appState.activeTab==='cases') renderCases();
+      if(appState.activeTab==='read') renderRead();
+      if(appState.activeTab==='differentials') renderDifferentials();
+      if(appState.activeTab==='evidence') renderEvidence();
+      if(appState.activeTab==='reviews') renderReviews();
+      if(appState.activeTab==='quiz') renderQuiz();
+      setTimeout(()=>lucide.createIcons(),0);
+    }
+
+    function renderCases(){
+      const container = document.getElementById('cases-tab');
+      const current = cases.find(c=>c.id===appState.currentCaseId) || cases[0];
+      const p = progressFor(current.id);
+      const hasStarted = p.step>0 || p.answered || p.teachBack;
+      container.innerHTML = `
+        <div class="space-y-5">
+          <section class="card-shadow overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+            <div class="bg-gradient-to-br from-slate-950 via-sky-950 to-teal-900 px-5 py-6 text-white sm:px-7">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs font-black uppercase tracking-[.22em] text-sky-200">Today’s learning session</p>
+                  <h2 class="mt-2 text-2xl font-black sm:text-3xl">Reason from symptom to mechanism</h2>
+                  <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-200">Predict first, compare the closest mimic, then defend the diagnosis in your own words.</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div class="rounded-xl bg-white/10 px-3 py-2"><div class="text-lg font-black">${completedCount()}/5</div><div>Cases</div></div>
+                  <div class="rounded-xl bg-white/10 px-3 py-2"><div class="text-lg font-black">${dueReviewCount()}</div><div>Due</div></div>
+                  <div class="rounded-xl bg-white/10 px-3 py-2"><div class="text-lg font-black">${appState.xp}</div><div>XP</div></div>
+                </div>
+              </div>
+              <div class="mt-5 rounded-2xl bg-white/10 p-4 backdrop-blur">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    <span class="grid h-11 w-11 place-items-center rounded-xl bg-white/15">${icon(current.icon)}</span>
+                    <div><p class="font-black">${escapeHTML(current.title)}</p><p class="text-xs text-slate-200">${hasStarted ? `Step ${Math.min(p.step+1,5)} of 5` : 'Recommended next case'} • ${current.minutes} min</p></div>
+                  </div>
+                  <button onclick="openCase('${current.id}')" class="focus-ring rounded-xl bg-white px-5 py-3 font-black text-slate-950 hover:bg-sky-100">${hasStarted && !p.completed ? 'Resume case' : p.completed ? 'Review case' : 'Start case'}</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div class="mb-3 flex items-end justify-between gap-3">
+              <div><p class="text-xs font-black uppercase tracking-[.2em] text-sky-700 dark:text-sky-300">Guided cases</p><h2 class="mt-1 text-xl font-black">Choose a clinical pattern</h2></div>
+              <span class="text-xs font-semibold text-slate-500">${completedCount()} mastered</span>
+            </div>
+            <div class="grid gap-4 md:grid-cols-2">
+              ${cases.map(c=>{
+                const cp=progressFor(c.id); const pct=cp.completed?100:Math.min(80,(cp.step||0)*20);
+                return `<article class="card-shadow rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+                  <div class="flex items-start gap-3">
+                    <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300">${icon(c.icon)}</span>
+                    <div class="min-w-0 flex-1"><h3 class="font-black">${escapeHTML(c.title)}</h3><p class="mt-1 text-sm text-slate-500 dark:text-slate-400">${escapeHTML(c.subtitle)}</p></div>
+                    ${cp.completed?'<span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-black text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Mastered</span>':''}
+                  </div>
+                  <div class="mt-4 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full rounded-full bg-gradient-to-r from-teal-500 to-sky-600" style="width:${pct}%"></div></div>
+                  <div class="mt-4 flex items-center justify-between gap-3"><span class="text-xs font-semibold text-slate-500">${c.minutes} min • 5 steps</span><button onclick="openCase('${c.id}')" class="focus-ring rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-black hover:border-sky-500 hover:text-sky-700 dark:border-slate-600">${cp.completed?'Review':'Open'}</button></div>
+                </article>`;
+              }).join('')}
+            </div>
+          </section>
+        </div>`;
+    }
+
+    function openCase(id){ appState.currentCaseId=id; appState.activeTab='read'; saveState(); switchTab('read'); }
+
+    function renderScenarioStep(c,p){
+      return `<div class="slide-up space-y-6">
+        <div><p class="text-xs font-black uppercase tracking-[.2em] text-teal-700 dark:text-teal-300">Step 1 • Clinical scenario</p><h3 class="mt-2 text-2xl font-black">What do you notice first?</h3><p class="mt-2 leading-7 text-slate-600 dark:text-slate-300">${escapeHTML(c.scenario.patient)} presents with <strong>${escapeHTML(c.scenario.complaint)}</strong></p></div>
+        <div class="grid gap-3 sm:grid-cols-3">${c.scenario.vitals.map(v=>`<div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center font-mono font-black dark:border-slate-700 dark:bg-slate-800">${escapeHTML(v)}</div>`).join('')}</div>
+        <div><h4 class="font-black">Initial findings</h4><div class="mt-3 grid gap-2 sm:grid-cols-2">${c.scenario.findings.map((f,i)=>`<button onclick="explainFinding(this,'${escapeHTML(f)}')" class="finding focus-ring min-h-0 rounded-xl p-3 text-left text-sm font-semibold"><span class="mr-2 text-sky-600">${i+1}.</span>${escapeHTML(f)}</button>`).join('')}</div><p class="mt-2 text-xs text-slate-500">Tap a finding to mark it as diagnostically important.</p></div>
+        <div class="rounded-2xl bg-amber-50 p-4 dark:bg-amber-950/30"><p class="text-sm font-black text-amber-900 dark:text-amber-100">Mentor prompt</p><p class="mt-1 text-sm leading-6 text-amber-800 dark:text-amber-200">Before naming a diagnosis, identify the dominant syndrome and one finding that does not fit your first instinct.</p></div>
+        <button onclick="setCaseStep('${c.id}',1)" class="focus-ring w-full rounded-2xl bg-sky-700 px-5 py-3.5 font-black text-white hover:bg-sky-800">Make a prediction ${icon('arrow-right','ml-1 inline h-4 w-4')}</button>
+      </div>`;
+    }
+    function explainFinding(btn,text){ btn.classList.toggle('ring-2'); btn.classList.toggle('ring-sky-500'); showToast(`Marked: ${text}`); }
+
+    function renderPredictionStep(c,p){
+      const chosen=p.selectedDiagnosis;
+      return `<div class="slide-up space-y-6">
+        <div><p class="text-xs font-black uppercase tracking-[.2em] text-teal-700 dark:text-teal-300">Step 2 • Prediction</p><h3 class="mt-2 text-2xl font-black">${escapeHTML(c.question)}</h3><p class="mt-2 text-sm text-slate-500">Commit to one answer before opening a hint.</p></div>
+        <div class="space-y-2" id="caseOptions">${c.options.map((o,i)=>`<button ${p.answered?'disabled':''} onclick="answerCase('${c.id}','${o.id}',this)" class="answer-btn focus-ring w-full rounded-2xl border-2 ${chosen===o.id?(o.id===c.correct?'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30':'border-rose-500 bg-rose-50 dark:bg-rose-950/30'):'border-slate-200'} p-4 text-left font-bold hover:border-sky-500 disabled:cursor-default dark:border-slate-700"><span class="mr-2 text-slate-400">${String.fromCharCode(65+i)}.</span>${escapeHTML(o.text)}</button>`).join('')}</div>
+        <details class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800"><summary class="cursor-pointer font-black">Need one clue?</summary><p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">${escapeHTML(c.hint)}</p></details>
+        ${p.answered?`<div class="slide-up rounded-2xl ${p.selectedDiagnosis===c.correct?'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30':'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30'} border p-5"><p class="font-black">${p.selectedDiagnosis===c.correct?'Exactly—you found the pattern.':'That is a common first impression.'}</p><p class="mt-2 leading-7">${escapeHTML(p.selectedDiagnosis===c.correct?c.feedbackCorrect:c.feedbackWrong)}</p></div>
+          <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs font-black uppercase tracking-[.16em] text-slate-500">A realistic learner might say</p><p class="mt-2 italic leading-7">“${escapeHTML(c.learnerVoices[p.selectedDiagnosis===c.correct?0:1])}”</p></div>
+          <button onclick="setCaseStep('${c.id}',2)" class="focus-ring w-full rounded-2xl bg-sky-700 px-5 py-3.5 font-black text-white hover:bg-sky-800">Discover the mechanism ${icon('arrow-right','ml-1 inline h-4 w-4')}</button>`:''}
+      </div>`;
+    }
+
+    function answerCase(caseId,selected,button){
+      const c=cases.find(x=>x.id===caseId); const p=progressFor(caseId);
+      if(p.answered) return;
+      p.answered=true; p.selectedDiagnosis=selected; p.step=1;
+      appState.caseProgress[caseId]=p;
+      if(selected===c.correct){ appState.xp+=12; showToast('Strong diagnostic reasoning +12 XP','success'); }
+      else { appState.misconceptionHistory.push({caseId,selected,date:todayISO()}); showToast('Use the narrower clue and try the pattern again','info'); }
+      saveState(); updateMetrics(); renderRead();
+    }
+
+    function renderPatternStep(c,p){
+      return `<div class="slide-up space-y-6">
+        <div><p class="text-xs font-black uppercase tracking-[.2em] text-teal-700 dark:text-teal-300">Step 3 • Pattern discovery</p><h3 class="mt-2 text-2xl font-black">${escapeHTML(c.patternTitle)}</h3><p class="mt-2 text-slate-600 dark:text-slate-300">Now connect the findings into one mechanism rather than memorizing isolated facts.</p></div>
+        <div class="space-y-3">${c.pattern.map((x,i)=>`<div class="flex gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sky-100 text-sm font-black text-sky-700 dark:bg-sky-950 dark:text-sky-300">${i+1}</span><p class="leading-7">${escapeHTML(x)}</p></div>${i<c.pattern.length-1?`<div class="ml-[15px] h-4 w-0.5 bg-sky-300 dark:bg-sky-700"></div>`:''}`).join('')}</div>
+        <div class="rounded-2xl border border-sky-200 bg-sky-50 p-5 dark:border-sky-800 dark:bg-sky-950/30"><p class="font-black text-sky-900 dark:text-sky-100">Diagnostic argument</p><p class="mt-2 leading-7 text-sky-900/90 dark:text-sky-100/90">${escapeHTML(c.feedbackCorrect)}</p></div>
+        <button onclick="setCaseStep('${c.id}',3)" class="focus-ring w-full rounded-2xl bg-sky-700 px-5 py-3.5 font-black text-white hover:bg-sky-800">Compare the mimic ${icon('arrow-right','ml-1 inline h-4 w-4')}</button>
+      </div>`;
+    }
+
+    function renderContrastStep(c,p){
+      return `<div class="slide-up space-y-6">
+        <div><p class="text-xs font-black uppercase tracking-[.2em] text-teal-700 dark:text-teal-300">Step 4 • Contrast</p><h3 class="mt-2 text-2xl font-black">Would the same diagnosis fit this patient?</h3><p class="mt-3 rounded-2xl bg-slate-50 p-5 leading-7 dark:bg-slate-800">${escapeHTML(c.contrast.prompt)}</p></div>
+        <div class="grid gap-3 sm:grid-cols-2">${c.contrast.options.map((o,i)=>`<button ${p.contrastDone?'disabled':''} onclick="answerContrast('${c.id}',${i})" class="focus-ring rounded-2xl border-2 ${p.contrastDone&&i===c.contrast.correct?'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30':'border-slate-200 dark:border-slate-700'} p-4 text-left font-bold hover:border-sky-500">${escapeHTML(o)}</button>`).join('')}</div>
+        ${p.contrastDone?`<div class="slide-up rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-800 dark:bg-emerald-950/30"><p class="font-black">Contrast revealed</p><p class="mt-2 leading-7">${escapeHTML(c.contrast.explanation)}</p></div><button onclick="setCaseStep('${c.id}',4)" class="focus-ring w-full rounded-2xl bg-sky-700 px-5 py-3.5 font-black text-white hover:bg-sky-800">Defend the diagnosis ${icon('arrow-right','ml-1 inline h-4 w-4')}</button>`:''}
+      </div>`;
+    }
+    function answerContrast(caseId,index){
+      const c=cases.find(x=>x.id===caseId); const p=progressFor(caseId); if(p.contrastDone)return;
+      p.contrastDone=true; p.contrastAnswer=index; p.step=3; appState.caseProgress[caseId]=p;
+      if(index===c.contrast.correct){appState.xp+=8;showToast('You separated the mimic +8 XP','success')} else {showToast('Review the discriminator in the explanation','info')}
+      saveState();updateMetrics();renderRead();
+    }
+
+    function renderTeachBackStep(c,p){
+      return `<div class="slide-up space-y-6">
+        <div><p class="text-xs font-black uppercase tracking-[.2em] text-teal-700 dark:text-teal-300">Step 5 • Teach-back</p><h3 class="mt-2 text-2xl font-black">Explain it like the attending</h3><p class="mt-2 leading-7 text-slate-600 dark:text-slate-300">${escapeHTML(c.teachBack)}</p></div>
+        <textarea id="teachBackInput" rows="6" class="focus-ring w-full rounded-2xl border-2 border-slate-200 bg-white p-4 leading-7 dark:border-slate-700 dark:bg-slate-800" placeholder="Build your diagnostic argument here...">${escapeHTML(p.teachBack||'')}</textarea>
+        <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="font-black">A strong answer usually includes</p><div class="mt-2 flex flex-wrap gap-2"><span class="rounded-full bg-white px-3 py-1 text-xs font-bold dark:bg-slate-900">Syndrome</span><span class="rounded-full bg-white px-3 py-1 text-xs font-bold dark:bg-slate-900">Key supporting finding</span><span class="rounded-full bg-white px-3 py-1 text-xs font-bold dark:bg-slate-900">Closest mimic</span><span class="rounded-full bg-white px-3 py-1 text-xs font-bold dark:bg-slate-900">Discriminator</span></div></div>
+        ${p.completed?`<div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-800 dark:bg-emerald-950/30"><div class="flex items-center gap-2"><span class="grid h-9 w-9 place-items-center rounded-full bg-emerald-600 text-white">${icon('check','h-5 w-5')}</span><p class="font-black">Case completed</p></div><p class="mt-3 leading-7">${escapeHTML(c.summary)}</p></div><div class="grid gap-3 sm:grid-cols-2"><button onclick="switchTab('differentials')" class="focus-ring rounded-2xl border-2 border-sky-700 px-5 py-3.5 font-black text-sky-700 dark:text-sky-300">Explore deeper</button><button onclick="nextCase('${c.id}')" class="focus-ring rounded-2xl bg-sky-700 px-5 py-3.5 font-black text-white hover:bg-sky-800">Next case</button></div>`:`<button onclick="completeCase('${c.id}')" class="focus-ring w-full rounded-2xl bg-sky-700 px-5 py-3.5 font-black text-white hover:bg-sky-800">Complete case</button>`}
+      </div>`;
+    }
+    function completeCase(caseId){
+      const text=document.getElementById('teachBackInput').value.trim(); if(text.length<25){showToast('Add at least two clinical sentences before completing','error');return;}
+      const p=progressFor(caseId);p.teachBack=text;p.completed=true;p.step=4;p.completedDate=todayISO();appState.caseProgress[caseId]=p;appState.xp+=20;
+      if(!appState.streak)appState.streak=1; saveState();updateMetrics();showToast('Case mastered +20 XP','success');renderRead();
+    }
+    function nextCase(id){ const idx=cases.findIndex(c=>c.id===id); const next=cases[(idx+1)%cases.length];appState.currentCaseId=next.id;saveState();renderRead(); }
+    function setCaseStep(id,step){const p=progressFor(id);p.step=step;appState.caseProgress[id]=p;saveState();renderRead();}
+
+    function renderReferenceSection(title, iconName, content){
+      return `<details class="card-shadow rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"><summary class="focus-ring flex cursor-pointer list-none items-center gap-3 p-5"><span class="grid h-11 w-11 place-items-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300">${icon(iconName)}</span><span class="text-lg font-black">${title}</span><span class="ml-auto">${icon('chevron-down')}</span></summary><div class="prose-med border-t border-slate-200 p-5 text-slate-700 dark:border-slate-700 dark:text-slate-200">${content}</div></details>`;
+    }
+
+    function renderRead(){
+      if(appState.currentCaseId){ renderCaseRead(); } else { renderReference(); }
+    }
+    function renderCaseRead(){
+      const container=document.getElementById('read-tab'); const c=cases.find(x=>x.id===appState.currentCaseId); if(!c){appState.currentCaseId=null;renderReference();return;}
+      const p=progressFor(c.id); const step=Math.min(p.step||0,4); const steps=['Recognize','Predict','Discover','Contrast','Teach-back'];
+      let body=[renderScenarioStep,renderPredictionStep,renderPatternStep,renderContrastStep,renderTeachBackStep][step](c,p);
+      container.innerHTML=`<div class="mx-auto max-w-4xl space-y-4"><div class="flex flex-wrap items-center justify-between gap-3"><button onclick="appState.currentCaseId=null;saveState();renderReference()" class="focus-ring inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-900">${icon('book-open','h-4 w-4')} Open reference notes</button><button onclick="switchTab('cases')" class="focus-ring inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-900">${icon('layout-grid','h-4 w-4')} All cases</button></div><section class="card-shadow overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"><div class="border-b border-slate-200 bg-slate-50 px-5 py-5 dark:border-slate-700 dark:bg-slate-800/70 sm:px-7"><div class="flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-2xl bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300">${icon(c.icon)}</span><div><p class="text-xs font-black uppercase tracking-[.18em] text-sky-700 dark:text-sky-300">Guided case</p><h2 class="text-2xl font-black">${escapeHTML(c.title)}</h2><p class="text-sm text-slate-500 dark:text-slate-400">${escapeHTML(c.subtitle)}</p></div></div><div class="mt-5 grid grid-cols-5 gap-1">${steps.map((s,i)=>`<div><div class="h-2 rounded-full ${i<=step?'bg-sky-600':'bg-slate-200 dark:bg-slate-700'}"></div><p class="mt-1 hidden text-center text-[10px] font-bold text-slate-500 sm:block">${s}</p></div>`).join('')}</div></div><div class="p-5 sm:p-7">${body}</div></section></div>`;
+      setTimeout(()=>lucide.createIcons(),0);
+    }
+
+    function renderReference(){
+      const container=document.getElementById('read-tab');
+      appState.currentCaseId=null; saveState();
+      const fundamentals=`
+        <h2>Heart rate, stroke volume, and cardiac output</h2>
+        <p><strong>Heart rate</strong> is the number of cardiac contractions per minute. The supplied normal range is <strong>60–100 beats/min</strong>. Sympathetic stimulation increases rate through β₁ receptors; parasympathetic vagal activity decreases it through M₂ receptors and mainly supplies the SA and AV nodes.</p>
+        <div class="my-4 grid gap-3 sm:grid-cols-3"><div class="rounded-xl bg-sky-50 p-4 dark:bg-sky-950/30"><p class="text-xs font-black uppercase text-sky-700">Preload</p><p class="mt-1 text-sm">End-diastolic myocardial stretch; SV rises with preload within physiological limits.</p></div><div class="rounded-xl bg-rose-50 p-4 dark:bg-rose-950/30"><p class="text-xs font-black uppercase text-rose-700 dark:text-rose-300">Afterload</p><p class="mt-1 text-sm">Pressure or wall stress faced during ejection; SV falls as afterload rises.</p></div><div class="rounded-xl bg-emerald-50 p-4 dark:bg-emerald-950/30"><p class="text-xs font-black uppercase text-emerald-700 dark:text-emerald-300">Contractility</p><p class="mt-1 text-sm">Intrinsic myocardial force independent of loading; SV rises with contractility.</p></div></div>
+        <div class="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-center dark:border-sky-800 dark:bg-sky-950/30"><p class="text-xs font-black uppercase tracking-[.2em] text-sky-700">Core equation</p><p class="mt-2 text-2xl font-black">Cardiac Output = Heart Rate × Stroke Volume</p><p class="mt-1 text-sm">Approximate resting value in an average adult: 5.0 L/min.</p></div>
+        <h2>Ejection fraction</h2><p><strong>EF = Stroke Volume ÷ End-Diastolic Volume × 100%.</strong> The supplied ranges are: normal LVEF 55–70%, reduced LVEF ≤40%, preserved LVEF ≥50%, and severe systolic dysfunction below 35%.</p>`;
+      const dyspnea=`
+        <h2>Why left-sided failure causes dyspnea</h2><ol><li>Elevated left-sided filling pressure causes pulmonary venous congestion.</li><li>Fluid enters the pulmonary interstitium, reducing alveolar compliance.</li><li>The work of breathing rises; severe congestion may produce intra-alveolar edema.</li><li>Bronchial venous congestion can cause mucosal edema and reflex bronchospasm (“cardiac asthma”).</li><li>Pulmonary receptor activation contributes to rapid, shallow breathing.</li></ol>
+        <h3>Clinical forms</h3><ul><li><strong>Exertional dyspnea:</strong> graded by NYHA I–IV.</li><li><strong>Orthopnea:</strong> appears when supine and improves by sitting up; recumbency redistributes fluid centrally and raises the diaphragm.</li><li><strong>PND:</strong> awakens the patient 1–2 hours after sleep; mechanisms include gradual edema-fluid resorption and loss of the upright posture.</li></ul>
+        <h3>Cardiac asthma vs bronchial asthma</h3><div class="overflow-x-auto"><table class="w-full min-w-[620px] border-collapse text-sm"><thead><tr class="bg-slate-100 dark:bg-slate-800"><th class="border p-2 text-left">Feature</th><th class="border p-2 text-left">Cardiac asthma</th><th class="border p-2 text-left">Bronchial asthma</th></tr></thead><tbody><tr><td class="border p-2">Typical context</td><td class="border p-2">Older age; HTN, IHD, or valvular disease</td><td class="border p-2">Childhood/young adult onset; atopy</td></tr><tr><td class="border p-2">Sputum</td><td class="border p-2">Frothy, pinkish, or blood-tinged</td><td class="border p-2">Thick, viscid, mucoid</td></tr><tr><td class="border p-2">Signs</td><td class="border p-2">Basal crepitations, S₃, cardiomegaly, raised JVP</td><td class="border p-2">Generalized expiratory wheeze, prolonged expiration</td></tr></tbody></table></div>`;
+      const edema=`
+        <h2>Pathogenesis of cardiac edema</h2><ol><li>Right ventricular and systemic venous congestion increase capillary hydrostatic pressure.</li><li>Low cardiac output reduces renal perfusion and GFR.</li><li>RAAS activation promotes sodium and water retention.</li><li>Non-osmotic ADH release promotes free-water retention.</li><li>Hepatic congestion can decrease hormone destruction and impair albumin synthesis; congestive enteropathy and poor intake can worsen hypoalbuminemia.</li></ol>
+        <h3>Clinical pattern</h3><p>Cardiac edema is typically <strong>dependent, bilateral, symmetrical, pitting, painless, and non-tender</strong>. In ambulatory patients it starts at the ankles; in bedridden patients it is often sacral.</p><h3>Ascites precox</h3><p>Ascites occurs before, or out of proportion to, lower-extremity edema. The notes associate it with constrictive pericarditis/pericardial effusion and severe tricuspid stenosis or regurgitation.</p>`;
+      const syncope=`
+        <h2>Definition</h2><p>Syncope is transient, self-limiting loss of consciousness caused by acute global cerebral hypoperfusion, with rapid onset, short duration, and spontaneous complete recovery.</p>
+        <h3>Etiologic anchors</h3><ul><li><strong>Vasovagal:</strong> emotional stress, pain, fear, or prolonged standing; vasodilation plus vagal bradycardia.</li><li><strong>Carotid sinus:</strong> stimulation by a tight collar or shaving.</li><li><strong>Cardiac:</strong> mechanical obstruction or arrhythmia; obstruction is often exertional.</li><li><strong>Orthostatic:</strong> systolic fall &gt;20 mmHg or diastolic fall &gt;10 mmHg within 3 minutes of standing.</li><li><strong>Situational:</strong> cough, micturition, or defecation.</li><li><strong>Cerebrovascular:</strong> vertebrobasilar TIA affecting the brainstem reticular activating system.</li></ul>`;
+      const bloodPain=`
+        <h2>Cardiovascular hemoptysis</h2><ul><li><strong>Acute pulmonary edema:</strong> frothy, pinkish, or blood-tinged sputum.</li><li><strong>Mitral stenosis:</strong> profuse, frank, sudden bright-red hemorrhage (“pulmonary apoplexy”).</li><li><strong>Pulmonary infarction:</strong> dark frank blood or streaking, with pleuritic pain and dyspnea.</li><li><strong>Ruptured aortic aneurysm:</strong> catastrophic hemoptysis if rupture enters the tracheobronchial tree.</li></ul>
+        <h2>Cardiovascular chest-pain patterns</h2><ul><li><strong>Myocardial ischemia:</strong> retrosternal crushing or squeezing pain, potentially radiating to shoulder, arm, neck, or jaw.</li><li><strong>Pericarditis:</strong> sharp pain worsened by inspiration, coughing, or lying flat and relieved by sitting forward.</li><li><strong>Aortic dissection:</strong> sudden tearing/ripping pain to the interscapular back, maximal at onset.</li><li><strong>Pulmonary embolism:</strong> sudden pleuritic pain with dyspnea, tachypnea, and hemoptysis.</li><li><strong>Cardiac neurosis:</strong> localized inframammary stabbing pain unrelated to exertion and associated with anxiety or hyperventilation.</li></ul>`;
+      container.innerHTML=`<div class="mx-auto max-w-4xl space-y-5"><div class="card-shadow rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900 sm:p-8"><p class="text-xs font-black uppercase tracking-[.22em] text-sky-700 dark:text-sky-300">Source-based reference</p><h2 class="mt-2 text-3xl font-black gradient-text">Cardiovascular physiology & symptomatology</h2><p class="mt-3 max-w-2xl leading-7 text-slate-600 dark:text-slate-300">A concise reading view derived only from the supplied study notes. Open any section, then return to Cases to apply it.</p><button onclick="appState.currentCaseId='dyspnea';saveState();renderCaseRead()" class="focus-ring mt-5 rounded-2xl bg-sky-700 px-5 py-3 font-black text-white">Start a guided case</button></div>${renderReferenceSection('Fundamentals of cardiovascular physiology','heart-pulse',fundamentals)}${renderReferenceSection('Cardiac dyspnea','wind',dyspnea)}${renderReferenceSection('Cardiac edema','footprints',edema)}${renderReferenceSection('Syncope','activity',syncope)}${renderReferenceSection('Hemoptysis & chest pain','droplets',bloodPain)}<div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100"><strong>Source scope:</strong> This reading view intentionally follows the supplied notes and does not add external guideline recommendations.</div></div>`;
+      setTimeout(()=>lucide.createIcons(),0);
+    }
+
+    function renderDifferentials(){
+      const container=document.getElementById('differentials-tab');
+      container.innerHTML=`<div class="mx-auto max-w-4xl space-y-5"><div><p class="text-xs font-black uppercase tracking-[.2em] text-sky-700 dark:text-sky-300">Pattern mastery</p><h2 class="mt-1 text-3xl font-black">Differential flashcards</h2><p class="mt-2 text-slate-600 dark:text-slate-300">Reveal the diagnosis, then rate how reliably you recognized the pattern.</p></div><div class="space-y-4">${differentialCards.map(card=>renderDiffCard(card)).join('')}</div></div>`;
+    }
+    function renderDiffCard(card){
+      const mastery=appState.differentialMastery[card.id];
+      return `<article class="card-shadow rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"><div class="flex items-start justify-between gap-3"><div><p class="text-xs font-black uppercase tracking-[.16em] text-slate-500">Clinical pattern</p><h3 class="mt-2 text-lg font-black">${escapeHTML(card.front)}</h3></div>${mastery?`<span class="rounded-full bg-sky-100 px-3 py-1 text-xs font-black text-sky-700 dark:bg-sky-950 dark:text-sky-300">${escapeHTML(mastery.rating)}</span>`:''}</div><details class="mt-4 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><summary class="cursor-pointer font-black text-sky-700 dark:text-sky-300">Reveal diagnosis</summary><div class="mt-4 space-y-3"><p class="text-xl font-black">→ ${escapeHTML(card.diagnosis)}</p><div><p class="text-xs font-black uppercase tracking-[.14em] text-slate-500">Key features</p><div class="mt-2 flex flex-wrap gap-2">${card.keys.map(x=>`<span class="rounded-full bg-white px-3 py-1 text-xs font-bold dark:bg-slate-900">${escapeHTML(x)}</span>`).join('')}</div></div><p class="text-sm"><strong>Closest mimic:</strong> ${escapeHTML(card.mimic)}</p><p class="rounded-xl bg-emerald-50 p-3 text-sm dark:bg-emerald-950/30"><strong>Clinical pearl:</strong> ${escapeHTML(card.pearl)}</p><div class="grid gap-2 sm:grid-cols-3"><button onclick="rateCard('${card.id}','Not ready')" class="focus-ring rounded-xl border-2 border-rose-300 px-3 py-2.5 font-bold text-rose-700 dark:border-rose-800 dark:text-rose-300">Not ready</button><button onclick="rateCard('${card.id}','Ready')" class="focus-ring rounded-xl border-2 border-amber-300 px-3 py-2.5 font-bold text-amber-700 dark:border-amber-800 dark:text-amber-300">Ready</button><button onclick="rateCard('${card.id}','Mastered')" class="focus-ring rounded-xl bg-emerald-600 px-3 py-2.5 font-bold text-white">Mastered</button></div></div></details></article>`;
+    }
+    function rateCard(id,rating){
+      const intervals={'Not ready':1,'Ready':7,'Mastered':60};
+      appState.differentialMastery[id]={rating,date:todayISO()};
+      appState.srsSchedule[id]={due:addDays(todayISO(),intervals[rating]),interval:intervals[rating]};
+      appState.xp+=rating==='Mastered'?6:3; saveState();updateMetrics();showToast(`${rating} — next review scheduled`,'success');renderDifferentials();
+    }
+
+    function renderEvidence(){
+      const container=document.getElementById('evidence-tab');
+      container.innerHTML=`<div class="mx-auto max-w-4xl space-y-5"><div><p class="text-xs font-black uppercase tracking-[.2em] text-sky-700 dark:text-sky-300">Evidence appraisal</p><h2 class="mt-1 text-3xl font-black">Which finding carries the most weight?</h2><p class="mt-2 text-slate-600 dark:text-slate-300">Choose before reading the explanation.</p></div>${evidenceQuestions.map((q,qi)=>{const ans=appState.quizAnswers[q.id];return `<article class="card-shadow rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"><div class="flex gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sky-100 font-black text-sky-700 dark:bg-sky-950 dark:text-sky-300">${qi+1}</span><h3 class="text-lg font-black leading-7">${escapeHTML(q.stem)}</h3></div><div class="mt-4 space-y-2">${q.options.map((o,i)=>`<button ${ans!==undefined?'disabled':''} onclick="answerEvidence('${q.id}',${i})" class="focus-ring w-full rounded-xl border-2 ${ans!==undefined&&i===q.correct?'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30':ans===i&&i!==q.correct?'border-rose-500 bg-rose-50 dark:bg-rose-950/30':'border-slate-200 dark:border-slate-700'} p-3 text-left font-semibold"><span class="mr-2 text-slate-400">${String.fromCharCode(65+i)}.</span>${escapeHTML(o)}</button>`).join('')}</div>${ans!==undefined?`<div class="slide-up mt-4 rounded-xl bg-sky-50 p-4 text-sm leading-6 dark:bg-sky-950/30"><p class="font-black">Evidence explanation</p><p class="mt-1">${escapeHTML(q.explanation)}</p></div>`:''}</article>`}).join('')}</div>`;
+    }
+    function answerEvidence(id,index){const q=evidenceQuestions.find(x=>x.id===id);appState.quizAnswers[id]=index;if(index===q.correct){appState.xp+=7;showToast('Correct evidence weighting +7 XP','success')}else{showToast('Review the discriminator','info')}saveState();updateMetrics();renderEvidence();}
+
+    function renderReviews(){
+      const container=document.getElementById('reviews-tab'); const due=differentialCards.filter(c=>!appState.srsSchedule[c.id]||appState.srsSchedule[c.id].due<=todayISO());
+      container.innerHTML=`<div class="mx-auto max-w-4xl space-y-5"><div class="card-shadow rounded-3xl bg-gradient-to-br from-indigo-950 to-sky-900 p-6 text-white"><p class="text-xs font-black uppercase tracking-[.2em] text-sky-200">SM-2 Lite queue</p><h2 class="mt-2 text-3xl font-black">${due.length} review${due.length===1?'':'s'} due today</h2><p class="mt-2 text-sm text-slate-200">Rate each card to schedule the next appearance.</p></div>${due.length?due.map(card=>`<article class="card-shadow rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"><p class="text-xs font-black uppercase tracking-[.16em] text-slate-500">Recall prompt</p><h3 class="mt-2 text-xl font-black">${escapeHTML(card.front)}</h3><details class="mt-4 rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><summary class="cursor-pointer font-black text-sky-700 dark:text-sky-300">Show answer</summary><p class="mt-3 text-lg font-black">${escapeHTML(card.diagnosis)}</p><p class="mt-2 text-sm">${escapeHTML(card.pearl)}</p></details><div class="mt-4 grid grid-cols-3 gap-2"><button onclick="reviewRate('${card.id}',1)" class="focus-ring rounded-xl border border-rose-300 px-2 py-2 text-sm font-bold text-rose-700 dark:border-rose-800 dark:text-rose-300">Too hard</button><button onclick="reviewRate('${card.id}',7)" class="focus-ring rounded-xl border border-amber-300 px-2 py-2 text-sm font-bold text-amber-700 dark:border-amber-800 dark:text-amber-300">Fair</button><button onclick="reviewRate('${card.id}',30)" class="focus-ring rounded-xl bg-emerald-600 px-2 py-2 text-sm font-bold text-white">Easy</button></div></article>`).join(''):`<div class="card-shadow rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center dark:border-emerald-800 dark:bg-emerald-950/30"><div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-600 text-white">${icon('check-check','h-7 w-7')}</div><h3 class="mt-4 text-2xl font-black">Review queue complete</h3><p class="mt-2 text-slate-600 dark:text-slate-300">Your scheduled cards will return on their due dates.</p></div>`}</div>`;
+    }
+    function reviewRate(id,days){appState.srsSchedule[id]={due:addDays(todayISO(),days),interval:days};appState.xp+=4;saveState();updateMetrics();showToast(`Next review in ${days} day${days===1?'':'s'}`,'success');renderReviews();}
+
+    function renderQuiz(){
+      const container=document.getElementById('quiz-tab'); const answered=quizQuestions.filter(q=>appState.quizAnswers[q.id]!==undefined).length;
+      container.innerHTML=`<div class="mx-auto max-w-4xl space-y-5"><div class="card-shadow rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"><div class="flex flex-wrap items-end justify-between gap-4"><div><p class="text-xs font-black uppercase tracking-[.2em] text-sky-700 dark:text-sky-300">Cumulative quiz</p><h2 class="mt-1 text-3xl font-black">Apply the full chapter</h2><p class="mt-2 text-slate-600 dark:text-slate-300">${answered} of ${quizQuestions.length} answered</p></div><button onclick="resetQuiz()" class="focus-ring rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-black dark:border-slate-600">Reset quiz</button></div><div class="mt-4 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full bg-gradient-to-r from-teal-500 to-sky-600" style="width:${answered/quizQuestions.length*100}%"></div></div></div>${quizQuestions.map((q,qi)=>{const ans=appState.quizAnswers[q.id];return `<article class="card-shadow rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"><p class="text-xs font-black uppercase tracking-[.16em] text-slate-500">Question ${qi+1}</p><h3 class="mt-2 text-lg font-black leading-7">${escapeHTML(q.stem)}</h3><div class="mt-4 space-y-2">${q.options.map((o,i)=>`<button ${ans!==undefined?'disabled':''} onclick="answerQuiz('${q.id}',${i})" class="focus-ring w-full rounded-xl border-2 ${ans!==undefined&&i===q.correct?'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30':ans===i&&i!==q.correct?'border-rose-500 bg-rose-50 dark:bg-rose-950/30':'border-slate-200 dark:border-slate-700'} p-3 text-left font-semibold"><span class="mr-2 text-slate-400">${String.fromCharCode(65+i)}.</span>${escapeHTML(o)}</button>`).join('')}</div>${ans!==undefined?`<div class="mt-4 rounded-xl bg-slate-50 p-4 text-sm leading-6 dark:bg-slate-800"><p class="font-black">${ans===q.correct?'Correct reasoning':'Review point'}</p><p class="mt-1">${escapeHTML(q.explanation)}</p></div>`:''}</article>`}).join('')}</div>`;
+    }
+    function answerQuiz(id,index){const q=quizQuestions.find(x=>x.id===id);appState.quizAnswers[id]=index;if(index===q.correct){appState.xp+=5;showToast('Correct +5 XP','success')}else showToast('Explanation unlocked','info');saveState();updateMetrics();renderQuiz();}
+    function resetQuiz(){quizQuestions.forEach(q=>delete appState.quizAnswers[q.id]);saveState();renderQuiz();showToast('Quiz reset');}
+
+    function populateVoices(){
+      const select=document.getElementById('voiceSelect'); const voices=speechSynthesis.getVoices();
+      select.innerHTML='<option value="auto">Automatic</option>'+voices.map((v,i)=>`<option value="${i}">${escapeHTML(v.name)} — ${escapeHTML(v.lang)}</option>`).join('');
+    }
+    function readCurrentView(){
+      if(!('speechSynthesis' in window)){showToast('Speech synthesis is not supported in this browser','error');return;}
+      if(speechSynthesis.speaking){speechSynthesis.cancel();document.getElementById('playButton').innerHTML=icon('play');lucide.createIcons();return;}
+      const section=document.getElementById(`${appState.activeTab}-tab`); const text=section.innerText.replace(/\s+/g,' ').trim(); if(!text)return;
+      const utter=new SpeechSynthesisUtterance(text.slice(0,12000)); utter.rate=Number(document.getElementById('speechSpeed').value);
+      const val=document.getElementById('voiceSelect').value; const voices=speechSynthesis.getVoices(); if(val!=='auto'&&voices[Number(val)])utter.voice=voices[Number(val)];
+      utter.onend=()=>{document.getElementById('playButton').innerHTML=icon('play');lucide.createIcons();};
+      document.getElementById('playButton').innerHTML=icon('square');lucide.createIcons();speechSynthesis.speak(utter);
+    }
+
+    document.querySelectorAll('.tab-button').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
+    document.getElementById('fontIncrease').addEventListener('click',()=>{appState.fontSize=Math.min(22,appState.fontSize+1);document.documentElement.style.setProperty('--base-font-size',`${appState.fontSize}px`);saveState();});
+    document.getElementById('fontDecrease').addEventListener('click',()=>{appState.fontSize=Math.max(14,appState.fontSize-1);document.documentElement.style.setProperty('--base-font-size',`${appState.fontSize}px`);saveState();});
+    document.getElementById('darkModeToggle').addEventListener('click',()=>{appState.darkMode=!appState.darkMode;document.documentElement.classList.toggle('dark',appState.darkMode);saveState();});
+    document.getElementById('settingsButton').addEventListener('click',()=>{const panel=document.getElementById('settingsPanel');panel.classList.toggle('hidden');document.getElementById('settingsButton').setAttribute('aria-expanded',String(!panel.classList.contains('hidden')));});
+    document.getElementById('speechSpeed').addEventListener('input',e=>document.getElementById('speedValue').textContent=`${Number(e.target.value).toFixed(1)}×`);
+    document.getElementById('evidenceToggle').addEventListener('change',e=>{appState.evidenceDetail=e.target.checked;saveState();document.querySelectorAll('.finding').forEach(x=>x.classList.toggle('opacity-60',!e.target.checked));});
+    document.getElementById('playButton').addEventListener('click',readCurrentView);
+    document.getElementById('helpButton').addEventListener('click',()=>{document.getElementById('helpModal').classList.remove('hidden');document.getElementById('helpModal').classList.add('flex');document.querySelector('#helpModal [tabindex="-1"]').focus();});
+    function closeHelp(){document.getElementById('helpModal').classList.add('hidden');document.getElementById('helpModal').classList.remove('flex');document.getElementById('helpButton').focus();}
+    document.getElementById('closeHelp').addEventListener('click',closeHelp);
+    document.getElementById('helpModal').addEventListener('click',e=>{if(e.target.id==='helpModal')closeHelp();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('helpModal').classList.contains('hidden'))closeHelp();});
+    window.addEventListener('beforeunload',()=>speechSynthesis.cancel());
+    if('speechSynthesis' in window){populateVoices();speechSynthesis.onvoiceschanged=populateVoices;}
+
+    updateVisit();
+    document.documentElement.style.setProperty('--base-font-size',`${appState.fontSize}px`);
+    document.documentElement.classList.toggle('dark',appState.darkMode);
+    document.getElementById('evidenceToggle').checked=appState.evidenceDetail;
+    updateMetrics();
+    switchTab(appState.activeTab || 'cases');
+    lucide.createIcons();
+  </script>
+</body>
+</html>
